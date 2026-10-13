@@ -9,12 +9,13 @@ import { useNavigate } from 'react-router-dom';
 import { OPERATOR_SESSION_KEY, type OperatorSession } from './DeveloperLogin.tsx';
 import { CLIENT_BASE_URL } from '../lib/hostConfig.ts';
 import { usePageTitle } from '../hooks/usePageTitle';
+import { useTheme } from '../hooks/useTheme';
 import {
   Zap, LayoutDashboard, Building2, Network, CreditCard, Key,
-  LogOut, Plus, Search, MoreHorizontal, CheckCircle, XCircle,
+  LogOut, Plus, Search, CheckCircle, XCircle,
   Clock, AlertTriangle, Copy, Eye, EyeOff, RefreshCw, Trash2,
-  Globe, ArrowUpRight, TrendingUp, Users, Activity, DollarSign,
-  Wifi, WifiOff, ChevronDown, X, Check, ExternalLink,
+  Globe, Users, Activity, DollarSign,
+  Wifi, WifiOff, X, Check, ExternalLink, Sun, Moon,
 } from 'lucide-react';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -78,17 +79,38 @@ const MOCK_API_KEYS: ApiKeyEntry[] = [
   { id: 'k3', label: 'Vendor Sync — Hubject',      keyPreview: 'cb_live_hub_f9a2…3441', created: '2024-09-10', lastUsed: '1 hour ago',   permissions: ['vendors:read', 'ocpi:write'], revealed: false },
 ];
 
+// ── Theme tokens ──────────────────────────────────────────────────────────────
+// Light + dark pairs. Avoids bg-white, bg-slate-50..200 and text-slate-400..900,
+// which index.css force-overrides in dark mode.
+
+const ring     = 'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500';
+const heading  = 'text-gray-900 dark:text-white';
+const sub      = 'text-gray-600 dark:text-slate-400';
+const muted    = 'text-gray-500 dark:text-slate-400';
+const body     = 'text-gray-700 dark:text-slate-300';
+const card     = 'rounded-2xl border border-gray-200 bg-white/90 dark:border-slate-800 dark:bg-slate-900/50';
+const divider  = 'border-gray-200 dark:border-slate-800';
+const zebra    = 'bg-gray-50/80 dark:bg-slate-900/30';
+const theadCls = 'bg-gray-100/80 border-b border-gray-200 dark:bg-slate-900/80 dark:border-slate-800';
+const thCls    = 'text-left text-[11px] font-semibold uppercase tracking-wide px-4 py-3 text-gray-500 dark:text-slate-400 whitespace-nowrap';
+const inputCls = 'w-full rounded-xl border border-gray-300 bg-white/90 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:placeholder:text-slate-500 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 transition';
+const labelCls = 'block text-xs font-medium mb-1 text-gray-700 dark:text-slate-300';
+const primaryBtn = `inline-flex items-center justify-center gap-2 rounded-xl bg-brand-600 hover:bg-brand-500 px-4 py-2 text-sm font-semibold text-white transition-colors ${ring}`;
+const secondaryBtn = `rounded-xl border border-gray-300 text-gray-700 hover:border-gray-400 hover:text-gray-900 dark:border-slate-700 dark:text-slate-300 dark:hover:border-slate-500 dark:hover:text-white py-2 text-sm transition-colors ${ring}`;
+const iconBtn  = `inline-flex items-center justify-center rounded-md p-1 text-gray-500 hover:text-gray-900 dark:text-slate-400 dark:hover:text-white transition-colors ${ring}`;
+const textLink = `text-brand-600 hover:text-brand-700 dark:text-brand-400 dark:hover:text-white transition-colors rounded ${ring}`;
+
 // ── Helper chips ──────────────────────────────────────────────────────────────
 
 function StatusChip({ status }: { status: string }) {
   const map: Record<string, string> = {
-    active:    'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-    connected: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-    paid:      'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-    pending:   'bg-amber-500/10  text-amber-400  border-amber-500/20',
-    error:     'bg-red-500/10    text-red-400    border-red-500/20',
-    overdue:   'bg-red-500/10    text-red-400    border-red-500/20',
-    suspended: 'bg-slate-500/10  text-slate-400  border-slate-500/20',
+    active:    'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/25',
+    connected: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/25',
+    paid:      'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/25',
+    pending:   'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/25',
+    error:     'bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/25',
+    overdue:   'bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/25',
+    suspended: 'bg-gray-500/10 text-gray-600 dark:text-slate-300 border-gray-500/25',
   };
   const icon: Record<string, React.ReactNode> = {
     active: <CheckCircle size={10} />, connected: <Wifi size={10} />, paid: <CheckCircle size={10} />,
@@ -96,7 +118,7 @@ function StatusChip({ status }: { status: string }) {
     suspended: <XCircle size={10} />,
   };
   return (
-    <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium capitalize ${map[status] ?? map.pending}`}>
+    <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium capitalize whitespace-nowrap ${map[status] ?? map.pending}`}>
       {icon[status]} {status}
     </span>
   );
@@ -104,14 +126,28 @@ function StatusChip({ status }: { status: string }) {
 
 function PlanChip({ plan }: { plan: string }) {
   const map: Record<string, string> = {
-    starter:    'bg-slate-700 text-slate-300',
-    growth:     'bg-brand-600/20 text-brand-300',
-    enterprise: 'bg-violet-600/20 text-violet-300',
+    starter:    'bg-gray-200 text-gray-700 dark:bg-slate-700 dark:text-slate-300',
+    growth:     'bg-brand-600/15 text-brand-700 dark:bg-brand-600/20 dark:text-brand-400',
+    enterprise: 'bg-violet-600/15 text-violet-700 dark:bg-violet-600/20 dark:text-violet-300',
   };
   return (
-    <span className={`inline-block rounded px-2 py-0.5 text-[10px] font-semibold capitalize ${map[plan] ?? ''}`}>
+    <span className={`inline-block rounded px-2 py-0.5 text-[11px] font-semibold capitalize ${map[plan] ?? ''}`}>
       {plan}
     </span>
+  );
+}
+
+function ModalFrame({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4" role="dialog" aria-modal="true" aria-label={title}>
+      <div className="w-full max-w-md rounded-2xl border border-gray-200 bg-white/95 p-6 shadow-2xl dark:border-slate-700 dark:bg-slate-900">
+        <div className="flex items-center justify-between mb-5">
+          <h2 className={`text-base font-semibold ${heading}`}>{title}</h2>
+          <button onClick={onClose} aria-label="Close" className={iconBtn}><X size={16} /></button>
+        </div>
+        {children}
+      </div>
+    </div>
   );
 }
 
@@ -132,48 +168,38 @@ function AddClientModal({ onClose, onAdd }: {
     onClose();
   }
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm px-4">
-      <div className="w-full max-w-md bg-slate-900 rounded-2xl border border-slate-700 p-6">
-        <div className="flex items-center justify-between mb-5">
-          <h2 className="text-base font-semibold text-white">Add client</h2>
-          <button onClick={onClose} className="text-slate-500 hover:text-slate-300"><X size={16} /></button>
+    <ModalFrame title="Add client" onClose={onClose}>
+      <form onSubmit={submit} className="space-y-3">
+        {([['company','Company name','Volta Networks'],['contact','Contact name','João Silva'],['email','Work email','joao@volta.io']] as [keyof typeof form, string, string][]).map(([k, label, ph]) => (
+          <div key={k}>
+            <label htmlFor={`add-client-${k}`} className={labelCls}>{label}</label>
+            <input id={`add-client-${k}`} required type={k === 'email' ? 'email' : 'text'} placeholder={ph}
+              value={form[k] as string} onChange={e => setForm(f => ({ ...f, [k]: e.target.value }))}
+              className={inputCls} />
+          </div>
+        ))}
+        <fieldset>
+          <legend className={labelCls}>Plan</legend>
+          <div className="flex gap-2">
+            {(['starter', 'growth', 'enterprise'] as Client['plan'][]).map(p => (
+              <button key={p} type="button" aria-pressed={form.plan === p} onClick={() => setForm(f => ({ ...f, plan: p }))}
+                className={`flex-1 rounded-xl border py-2 text-xs font-medium capitalize transition-colors ${ring} ${
+                  form.plan === p
+                    ? 'bg-brand-600 border-brand-600 text-white'
+                    : 'border-gray-300 text-gray-700 hover:border-gray-400 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 dark:hover:border-slate-500'
+                }`}>{p}</button>
+            ))}
+          </div>
+        </fieldset>
+        <p className={`text-xs ${muted} pt-1`}>
+          Portal login credentials will be emailed to the contact after confirmation.
+        </p>
+        <div className="flex gap-2 pt-2">
+          <button type="button" onClick={onClose} className={`flex-1 ${secondaryBtn}`}>Cancel</button>
+          <button type="submit" className={`flex-1 ${primaryBtn}`}>Add client</button>
         </div>
-        <form onSubmit={submit} className="space-y-3">
-          {([['company','Company name','Volta Networks'],['contact','Contact name','João Silva'],['email','Work email','joao@volta.io']] as [keyof typeof form, string, string][]).map(([k, label, ph]) => (
-            <div key={k}>
-              <label className="block text-xs font-medium text-slate-400 mb-1">{label}</label>
-              <input required type={k === 'email' ? 'email' : 'text'} placeholder={ph}
-                value={form[k] as string} onChange={e => setForm(f => ({ ...f, [k]: e.target.value }))}
-                className="w-full rounded-xl bg-slate-800 border border-slate-700 px-3 py-2 text-sm text-white placeholder:text-slate-600 focus:outline-none focus:border-brand-500 transition-colors" />
-            </div>
-          ))}
-          <div>
-            <label className="block text-xs font-medium text-slate-400 mb-1">Plan</label>
-            <div className="flex gap-2">
-              {(['starter', 'growth', 'enterprise'] as Client['plan'][]).map(p => (
-                <button key={p} type="button" onClick={() => setForm(f => ({ ...f, plan: p }))}
-                  className={`flex-1 rounded-xl border py-2 text-xs font-medium capitalize transition-colors ${
-                    form.plan === p ? 'bg-brand-600 border-brand-600 text-white' : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-500'
-                  }`}>{p}</button>
-              ))}
-            </div>
-          </div>
-          <p className="text-[10px] text-slate-500 pt-1">
-            Portal login credentials will be emailed to the contact after confirmation.
-          </p>
-          <div className="flex gap-2 pt-2">
-            <button type="button" onClick={onClose}
-              className="flex-1 rounded-xl border border-slate-700 py-2 text-sm text-slate-400 hover:text-white transition-colors">
-              Cancel
-            </button>
-            <button type="submit"
-              className="flex-1 rounded-xl bg-brand-600 hover:bg-brand-500 py-2 text-sm font-semibold text-white transition-colors">
-              Add client
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+      </form>
+    </ModalFrame>
   );
 }
 
@@ -191,55 +217,41 @@ function AddVendorModal({ onClose, onAdd }: {
   }
   const field = (k: keyof typeof form, label: string, ph: string, type = 'text') => (
     <div key={k}>
-      <label className="block text-xs font-medium text-slate-400 mb-1">{label}</label>
-      <input required type={type} placeholder={ph}
+      <label htmlFor={`add-vendor-${k}`} className={labelCls}>{label}</label>
+      <input id={`add-vendor-${k}`} required type={type} placeholder={ph}
         value={form[k]} onChange={e => setForm(f => ({ ...f, [k]: e.target.value }))}
-        className="w-full rounded-xl bg-slate-800 border border-slate-700 px-3 py-2 text-sm text-white placeholder:text-slate-600 focus:outline-none focus:border-brand-500 transition-colors" />
+        className={inputCls} />
     </div>
   );
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm px-4">
-      <div className="w-full max-w-md bg-slate-900 rounded-2xl border border-slate-700 p-6">
-        <div className="flex items-center justify-between mb-5">
-          <h2 className="text-base font-semibold text-white">Add vendor</h2>
-          <button onClick={onClose} className="text-slate-500 hover:text-slate-300"><X size={16} /></button>
+    <ModalFrame title="Add vendor" onClose={onClose}>
+      <form onSubmit={submit} className="space-y-3">
+        {field('name',     'Vendor name',     'Hubject')}
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label htmlFor="add-vendor-type" className={labelCls}>Type</label>
+            <select id="add-vendor-type" value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value }))} className={inputCls}>
+              {['CPO','eMSP','eMSP + CPO'].map(t => <option key={t}>{t}</option>)}
+            </select>
+          </div>
+          <div>
+            <label htmlFor="add-vendor-ocpi" className={labelCls}>OCPI version</label>
+            <select id="add-vendor-ocpi" value={form.ocpiVersion} onChange={e => setForm(f => ({ ...f, ocpiVersion: e.target.value }))} className={inputCls}>
+              {['2.1.1','2.2','2.2.1'].map(v => <option key={v}>{v}</option>)}
+            </select>
+          </div>
         </div>
-        <form onSubmit={submit} className="space-y-3">
-          {field('name',     'Vendor name',     'Hubject')}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-medium text-slate-400 mb-1">Type</label>
-              <select value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value }))}
-                className="w-full rounded-xl bg-slate-800 border border-slate-700 px-3 py-2 text-sm text-white focus:outline-none focus:border-brand-500 transition-colors">
-                {['CPO','eMSP','eMSP + CPO'].map(t => <option key={t}>{t}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-slate-400 mb-1">OCPI version</label>
-              <select value={form.ocpiVersion} onChange={e => setForm(f => ({ ...f, ocpiVersion: e.target.value }))}
-                className="w-full rounded-xl bg-slate-800 border border-slate-700 px-3 py-2 text-sm text-white focus:outline-none focus:border-brand-500 transition-colors">
-                {['2.1.1','2.2','2.2.1'].map(v => <option key={v}>{v}</option>)}
-              </select>
-            </div>
-          </div>
-          {field('country',  'Country code',    'DE')}
-          {field('endpoint', 'OCPI endpoint URL','https://api.vendor.com/ocpi', 'url')}
-          <p className="text-[10px] text-slate-500 pt-1">
-            A connection test will run after adding. The vendor will be listed as "pending" until handshake completes.
-          </p>
-          <div className="flex gap-2 pt-2">
-            <button type="button" onClick={onClose}
-              className="flex-1 rounded-xl border border-slate-700 py-2 text-sm text-slate-400 hover:text-white transition-colors">
-              Cancel
-            </button>
-            <button type="submit"
-              className="flex-1 rounded-xl bg-brand-600 hover:bg-brand-500 py-2 text-sm font-semibold text-white transition-colors">
-              Add vendor
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+        {field('country',  'Country code',    'DE')}
+        {field('endpoint', 'OCPI endpoint URL','https://api.vendor.com/ocpi', 'url')}
+        <p className={`text-xs ${muted} pt-1`}>
+          A connection test will run after adding. The vendor will be listed as "pending" until handshake completes.
+        </p>
+        <div className="flex gap-2 pt-2">
+          <button type="button" onClick={onClose} className={`flex-1 ${secondaryBtn}`}>Cancel</button>
+          <button type="submit" className={`flex-1 ${primaryBtn}`}>Add vendor</button>
+        </div>
+      </form>
+    </ModalFrame>
   );
 }
 
@@ -248,6 +260,7 @@ function AddVendorModal({ onClose, onAdd }: {
 export default function OperatorDashboard() {
   const navigate = useNavigate();
   usePageTitle('Operator Console · RFConnector');
+  const { darkMode, toggleTheme } = useTheme();
 
   const rawSession = sessionStorage.getItem(OPERATOR_SESSION_KEY);
   const session: OperatorSession | null = rawSession ? JSON.parse(rawSession) : null;
@@ -285,44 +298,51 @@ export default function OperatorDashboard() {
   const outstanding     = MOCK_INVOICES.filter(i => i.status === 'pending').reduce((s, i) => s + i.amount, 0);
   const overdue         = MOCK_INVOICES.filter(i => i.status === 'overdue').reduce((s, i) => s + i.amount, 0);
 
+  const pageHeader = (title: string, subtitle: React.ReactNode, action?: React.ReactNode) => (
+    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <h1 className={`text-xl font-bold mb-1 ${heading}`}>{title}</h1>
+        <p className={`text-sm ${sub}`}>{subtitle}</p>
+      </div>
+      {action}
+    </div>
+  );
+
   // ── Sections ──────────────────────────────────────────────────────────────
 
   function renderOverview() {
     const kpis: { label: string; value: string | number; sub: string; icon: React.ElementType; color: string; iconBg: string; nav: typeof activeNav; trend?: string; trendUp?: boolean }[] = [
-      { label: 'Active clients',    value: activeClients,                    sub: `${clients.length} total`,        icon: Building2,  color: 'text-brand-400',   iconBg: 'bg-brand-500/10',   nav: 'clients',  trend: '+2 this month',  trendUp: true  },
-      { label: 'Monthly recurring', value: `$${totalMrr.toLocaleString()}`,  sub: 'from active contracts',          icon: DollarSign, color: 'text-emerald-400', iconBg: 'bg-emerald-500/10', nav: 'payments', trend: '+12% vs last mo', trendUp: true  },
-      { label: 'Connected vendors', value: connectedVendors,                 sub: `${vendors.length} total`,        icon: Network,    color: 'text-violet-400',  iconBg: 'bg-violet-500/10',  nav: 'vendors',  trend: '1 error',         trendUp: false },
-      { label: 'Total sessions',    value: totalSessions.toLocaleString(),   sub: 'across all vendors',             icon: Activity,   color: 'text-amber-400',   iconBg: 'bg-amber-500/10',   nav: 'vendors',  trend: '+8% vs last mo',  trendUp: true  },
+      { label: 'Active clients',    value: activeClients,                    sub: `${clients.length} total`,        icon: Building2,  color: 'text-brand-600 dark:text-brand-400',     iconBg: 'bg-brand-500/10',   nav: 'clients',  trend: '+2 this month',  trendUp: true  },
+      { label: 'Monthly recurring', value: `$${totalMrr.toLocaleString()}`,  sub: 'from active contracts',          icon: DollarSign, color: 'text-emerald-600 dark:text-emerald-400', iconBg: 'bg-emerald-500/10', nav: 'payments', trend: '+12% vs last mo', trendUp: true  },
+      { label: 'Connected vendors', value: connectedVendors,                 sub: `${vendors.length} total`,        icon: Network,    color: 'text-violet-600 dark:text-violet-400',   iconBg: 'bg-violet-500/10',  nav: 'vendors',  trend: '1 error',         trendUp: false },
+      { label: 'Total sessions',    value: totalSessions.toLocaleString(),   sub: 'across all vendors',             icon: Activity,   color: 'text-amber-600 dark:text-amber-400',     iconBg: 'bg-amber-500/10',   nav: 'vendors',  trend: '+8% vs last mo',  trendUp: true  },
     ];
     return (
-      <div className="p-6 space-y-6">
-        <div>
-          <h1 className="text-lg font-bold text-white mb-1">Overview</h1>
-          <p className="text-sm text-slate-500">Platform health at a glance</p>
-        </div>
+      <div className="p-4 sm:p-6 space-y-6">
+        {pageHeader('Overview', 'Platform health at a glance')}
 
-        <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
-          {kpis.map(({ label, value, sub, icon: Icon, color, iconBg, nav, trend, trendUp }) => (
+        <div className="grid grid-cols-1 min-[420px]:grid-cols-2 xl:grid-cols-4 gap-4">
+          {kpis.map(({ label, value, sub: kpiSub, icon: Icon, color, iconBg, nav, trend, trendUp }) => (
             <button
               key={label}
               onClick={() => setActiveNav(nav)}
-              className="group rounded-2xl border border-slate-800 bg-slate-900/50 p-4 text-left transition-all hover:border-slate-600 hover:bg-slate-800/60 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/30 active:translate-y-0"
+              className={`group ${card} p-4 text-left transition-all hover:border-gray-300 dark:hover:border-slate-600 dark:hover:bg-slate-800/60 motion-safe:hover:-translate-y-0.5 hover:shadow-lg ${ring}`}
             >
               <div className="flex items-center justify-between mb-3">
-                <p className="text-xs text-slate-500">{label}</p>
-                <div className={`flex h-7 w-7 items-center justify-center rounded-lg ${iconBg} transition-transform group-hover:scale-110`}>
+                <p className={`text-xs ${muted}`}>{label}</p>
+                <div className={`flex h-7 w-7 items-center justify-center rounded-lg ${iconBg}`}>
                   <Icon size={13} className={color} />
                 </div>
               </div>
-              <p className="text-2xl font-bold text-white">{value}</p>
-              <p className="text-[11px] text-slate-600 mt-0.5">{sub}</p>
-              <div className="flex items-center justify-between mt-3 pt-2 border-t border-slate-800">
+              <p className={`text-2xl font-bold ${heading}`}>{value}</p>
+              <p className={`text-xs ${muted} mt-0.5`}>{kpiSub}</p>
+              <div className={`flex items-center justify-between mt-3 pt-2 border-t ${divider}`}>
                 {trend && (
-                  <span className={`text-[10px] font-medium ${trendUp ? 'text-emerald-400' : 'text-red-400'}`}>
+                  <span className={`text-[11px] font-medium ${trendUp ? 'text-emerald-700 dark:text-emerald-400' : 'text-red-700 dark:text-red-400'}`}>
                     {trendUp ? '↑' : '↓'} {trend}
                   </span>
                 )}
-                <span className={`text-[10px] text-slate-600 group-hover:text-brand-400 transition-colors ml-auto`}>
+                <span className={`text-[11px] ${muted} group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors ml-auto`}>
                   View →
                 </span>
               </div>
@@ -332,31 +352,31 @@ export default function OperatorDashboard() {
 
         {/* Alerts */}
         {overdue > 0 && (
-          <div className="flex items-center gap-3 rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3">
-            <AlertTriangle size={14} className="text-red-400 shrink-0" />
-            <p className="text-sm text-red-300">
+          <div role="status" className="flex flex-wrap items-center gap-3 rounded-xl border border-red-500/25 bg-red-500/5 px-4 py-3">
+            <AlertTriangle size={14} className="text-red-600 dark:text-red-400 shrink-0" />
+            <p className="text-sm text-red-800 dark:text-red-300">
               <span className="font-semibold">${overdue} overdue</span> — 1 invoice past due. Review in Payments.
             </p>
-            <button onClick={() => setActiveNav('payments')} className="ml-auto text-xs text-red-400 hover:text-red-300 shrink-0">
+            <button onClick={() => setActiveNav('payments')} className={`ml-auto text-sm font-medium text-red-700 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 shrink-0 rounded ${ring}`}>
               View →
             </button>
           </div>
         )}
         {outstanding > 0 && (
-          <div className="flex items-center gap-3 rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-3">
-            <Clock size={14} className="text-amber-400 shrink-0" />
-            <p className="text-sm text-amber-300">
+          <div role="status" className="flex items-center gap-3 rounded-xl border border-amber-500/25 bg-amber-500/5 px-4 py-3">
+            <Clock size={14} className="text-amber-600 dark:text-amber-400 shrink-0" />
+            <p className="text-sm text-amber-800 dark:text-amber-300">
               <span className="font-semibold">${outstanding} outstanding</span> — {MOCK_INVOICES.filter(i => i.status === 'pending').length} invoices pending this cycle.
             </p>
           </div>
         )}
         {vendors.some(v => v.status === 'error') && (
-          <div className="flex items-center gap-3 rounded-xl border border-orange-500/20 bg-orange-500/5 px-4 py-3">
-            <WifiOff size={14} className="text-orange-400 shrink-0" />
-            <p className="text-sm text-orange-300">
+          <div role="status" className="flex flex-wrap items-center gap-3 rounded-xl border border-orange-500/25 bg-orange-500/5 px-4 py-3">
+            <WifiOff size={14} className="text-orange-600 dark:text-orange-400 shrink-0" />
+            <p className="text-sm text-orange-800 dark:text-orange-300">
               <span className="font-semibold">{vendors.filter(v => v.status === 'error').length} vendor connection error</span> — check API credentials.
             </p>
-            <button onClick={() => setActiveNav('vendors')} className="ml-auto text-xs text-orange-400 hover:text-orange-300 shrink-0">
+            <button onClick={() => setActiveNav('vendors')} className={`ml-auto text-sm font-medium text-orange-700 hover:text-orange-900 dark:text-orange-400 dark:hover:text-orange-300 shrink-0 rounded ${ring}`}>
               Fix →
             </button>
           </div>
@@ -364,44 +384,42 @@ export default function OperatorDashboard() {
 
         {/* Quick stats */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Recent clients */}
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/50 p-4">
+          <div className={`${card} p-4`}>
             <div className="flex items-center justify-between mb-3">
-              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Recent clients</p>
-              <button onClick={() => setActiveNav('clients')} className="text-[11px] text-brand-400 hover:text-brand-300">View all →</button>
+              <h2 className={`text-xs font-semibold uppercase tracking-wide ${sub}`}>Recent clients</h2>
+              <button onClick={() => setActiveNav('clients')} className={`text-xs ${textLink}`}>View all →</button>
             </div>
-            <div className="space-y-2">
+            <ul className="space-y-2.5">
               {clients.slice(0, 4).map(c => (
-                <div key={c.id} className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-white">{c.company}</p>
-                    <p className="text-[11px] text-slate-500">{c.contact}</p>
+                <li key={c.id} className="flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className={`text-sm truncate ${heading}`}>{c.company}</p>
+                    <p className={`text-xs ${muted}`}>{c.contact}</p>
                   </div>
                   <StatusChip status={c.status} />
-                </div>
+                </li>
               ))}
-            </div>
+            </ul>
           </div>
 
-          {/* Vendor status */}
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/50 p-4">
+          <div className={`${card} p-4`}>
             <div className="flex items-center justify-between mb-3">
-              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Vendor connections</p>
-              <button onClick={() => setActiveNav('vendors')} className="text-[11px] text-brand-400 hover:text-brand-300">View all →</button>
+              <h2 className={`text-xs font-semibold uppercase tracking-wide ${sub}`}>Vendor connections</h2>
+              <button onClick={() => setActiveNav('vendors')} className={`text-xs ${textLink}`}>View all →</button>
             </div>
-            <div className="space-y-2">
+            <ul className="space-y-2.5">
               {vendors.map(v => (
-                <div key={v.id} className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-white">{v.name}
-                      <span className="ml-2 text-[10px] text-slate-500">{v.type}</span>
+                <li key={v.id} className="flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className={`text-sm truncate ${heading}`}>{v.name}
+                      <span className={`ml-2 text-[11px] ${muted}`}>{v.type}</span>
                     </p>
-                    <p className="text-[11px] text-slate-600 font-mono">{v.ocpiVersion}</p>
+                    <p className={`text-xs ${muted} font-mono`}>{v.ocpiVersion}</p>
                   </div>
                   <StatusChip status={v.status} />
-                </div>
+                </li>
               ))}
-            </div>
+            </ul>
           </div>
         </div>
       </div>
@@ -415,66 +433,64 @@ export default function OperatorDashboard() {
       c.email.toLowerCase().includes(search.toLowerCase())
     );
     return (
-      <div className="p-6 space-y-5">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-lg font-bold text-white mb-1">Clients</h1>
-            <p className="text-sm text-slate-500">{activeClients} active · {clients.length} total</p>
-          </div>
-          <button onClick={() => setShowAddClient(true)}
-            className="inline-flex items-center gap-2 rounded-xl bg-brand-600 hover:bg-brand-500 px-4 py-2 text-sm font-semibold text-white transition-colors">
+      <div className="p-4 sm:p-6 space-y-5">
+        {pageHeader('Clients', `${activeClients} active · ${clients.length} total`,
+          <button onClick={() => setShowAddClient(true)} className={`${primaryBtn} self-start`}>
             <Plus size={14} /> Add client
           </button>
-        </div>
+        )}
 
-        {/* Search */}
         <div className="relative max-w-xs">
-          <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
-          <input value={search} onChange={e => setSearch(e.target.value)}
+          <label htmlFor="client-search" className="sr-only">Search clients</label>
+          <Search size={13} className={`absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none ${muted}`} />
+          <input id="client-search" type="search" value={search} onChange={e => setSearch(e.target.value)}
             placeholder="Search clients…"
-            className="w-full rounded-xl bg-slate-800 border border-slate-700 pl-9 pr-4 py-2 text-sm text-white placeholder:text-slate-600 focus:outline-none focus:border-brand-500 transition-colors" />
+            className={`${inputCls} pl-9 pr-4`} />
         </div>
 
-        {/* Table */}
-        <div className="rounded-2xl border border-slate-800 overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-slate-900/80 border-b border-slate-800">
-              <tr>
-                {['Company','Contact','Plan','Portal users','MRR','Status',''].map(h => (
-                  <th key={h} className="text-left text-[11px] font-semibold text-slate-500 uppercase tracking-wide px-4 py-3">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((c, i) => (
-                <tr key={c.id} className={`border-b border-slate-800/60 last:border-0 ${i % 2 === 0 ? 'bg-slate-900/30' : ''}`}>
-                  <td className="px-4 py-3">
-                    <p className="font-medium text-white">{c.company}</p>
-                    <p className="text-[11px] text-slate-500 font-mono">{c.email}</p>
-                  </td>
-                  <td className="px-4 py-3 text-slate-300">{c.contact}</td>
-                  <td className="px-4 py-3"><PlanChip plan={c.plan} /></td>
-                  <td className="px-4 py-3">
-                    <span className="inline-flex items-center gap-1 text-slate-400">
-                      <Users size={11} /> {c.portalUsers}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 font-mono text-slate-300">
-                    {c.mrr > 0 ? `$${c.mrr}` : <span className="text-slate-600">—</span>}
-                  </td>
-                  <td className="px-4 py-3"><StatusChip status={c.status} /></td>
-                  <td className="px-4 py-3 text-right">
-                    <a href={`${CLIENT_BASE_URL}/login`} target="_blank" rel="noopener noreferrer"
-                      className="text-[11px] text-brand-400 hover:text-brand-300 inline-flex items-center gap-1">
-                      Portal <ExternalLink size={10} />
-                    </a>
-                  </td>
+        <div className={`${card} overflow-hidden`}>
+          <div className="relative overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className={theadCls}>
+                <tr>
+                  {['Company','Contact','Plan','Portal users','MRR','Status'].map(h => (
+                    <th key={h} scope="col" className={thCls}>{h}</th>
+                  ))}
+                  <th scope="col" className={thCls}><span className="sr-only">Actions</span></th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {filtered.map((c, i) => (
+                  <tr key={c.id} className={`border-b border-gray-100 dark:border-slate-800/60 last:border-0 ${i % 2 === 0 ? zebra : ''}`}>
+                    <td className="px-4 py-3">
+                      <p className={`font-medium ${heading}`}>{c.company}</p>
+                      <p className={`text-xs ${muted} font-mono`}>{c.email}</p>
+                    </td>
+                    <td className={`px-4 py-3 whitespace-nowrap ${body}`}>{c.contact}</td>
+                    <td className="px-4 py-3"><PlanChip plan={c.plan} /></td>
+                    <td className="px-4 py-3">
+                      <span className={`inline-flex items-center gap-1 ${sub}`}>
+                        <Users size={11} /> {c.portalUsers}
+                      </span>
+                    </td>
+                    <td className={`px-4 py-3 font-mono ${body}`}>
+                      {c.mrr > 0 ? `$${c.mrr}` : <span className={muted}>—</span>}
+                    </td>
+                    <td className="px-4 py-3"><StatusChip status={c.status} /></td>
+                    <td className="px-4 py-3 text-right">
+                      <a href={`${CLIENT_BASE_URL}/login`} target="_blank" rel="noopener noreferrer"
+                        aria-label={`Open client portal for ${c.company} (new tab)`}
+                        className={`text-xs inline-flex items-center gap-1 ${textLink}`}>
+                        Portal <ExternalLink size={10} />
+                      </a>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
           {filtered.length === 0 && (
-            <div className="py-10 text-center text-slate-600 text-sm">No clients match your search.</div>
+            <div className={`py-10 text-center text-sm ${muted}`}>No clients match your search.</div>
           )}
         </div>
       </div>
@@ -483,63 +499,54 @@ export default function OperatorDashboard() {
 
   function renderVendors() {
     return (
-      <div className="p-6 space-y-5">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-lg font-bold text-white mb-1">Vendors</h1>
-            <p className="text-sm text-slate-500">
-              {connectedVendors} connected · vendors listed here appear in the client portal marketplace
-            </p>
-          </div>
-          <button onClick={() => setShowAddVendor(true)}
-            className="inline-flex items-center gap-2 rounded-xl bg-brand-600 hover:bg-brand-500 px-4 py-2 text-sm font-semibold text-white transition-colors">
+      <div className="p-4 sm:p-6 space-y-5">
+        {pageHeader('Vendors', `${connectedVendors} connected · vendors listed here appear in the client portal marketplace`,
+          <button onClick={() => setShowAddVendor(true)} className={`${primaryBtn} self-start shrink-0`}>
             <Plus size={14} /> Add vendor
           </button>
-        </div>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {vendors.map(v => (
-            <div key={v.id} className="rounded-2xl border border-slate-800 bg-slate-900/50 p-4 flex flex-col gap-3">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="font-semibold text-white">{v.name}</p>
-                  <p className="text-xs text-slate-500 mt-0.5">{v.type} · {v.country}</p>
+            <div key={v.id} className={`${card} p-4 flex flex-col gap-3`}>
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className={`font-semibold ${heading}`}>{v.name}</p>
+                  <p className={`text-xs ${muted} mt-0.5`}>{v.type} · {v.country}</p>
                 </div>
                 <StatusChip status={v.status} />
               </div>
 
-              <div className="space-y-1.5">
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] text-slate-600 w-16 shrink-0">Endpoint</span>
-                  <span className="text-[11px] text-slate-400 font-mono truncate">{v.endpoint}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] text-slate-600 w-16 shrink-0">OCPI</span>
-                  <span className="text-[11px] text-slate-400">{v.ocpiVersion}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] text-slate-600 w-16 shrink-0">Sessions</span>
-                  <span className="text-[11px] text-slate-400 font-mono">{v.sessions.toLocaleString()}</span>
-                </div>
-              </div>
+              <dl className="space-y-1.5">
+                {[
+                  ['Endpoint', v.endpoint, true],
+                  ['OCPI', v.ocpiVersion, false],
+                  ['Sessions', v.sessions.toLocaleString(), true],
+                ].map(([label, value, mono]) => (
+                  <div key={label as string} className="flex items-center gap-2">
+                    <dt className={`text-[11px] ${muted} w-16 shrink-0`}>{label}</dt>
+                    <dd className={`text-xs ${body} truncate ${mono ? 'font-mono' : ''}`}>{value}</dd>
+                  </div>
+                ))}
+              </dl>
 
-              <div className="flex items-center gap-2 pt-1 border-t border-slate-800">
+              <div className={`flex items-center gap-2 pt-2 border-t ${divider}`}>
                 {v.status === 'error' && (
-                  <button className="flex-1 rounded-lg bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 py-1.5 text-xs text-red-400 transition-colors inline-flex items-center justify-center gap-1">
+                  <button className={`flex-1 rounded-lg bg-red-500/10 hover:bg-red-500/20 border border-red-500/25 py-1.5 text-xs font-medium text-red-700 dark:text-red-400 transition-colors inline-flex items-center justify-center gap-1 ${ring}`}>
                     <RefreshCw size={11} /> Reconnect
                   </button>
                 )}
                 {v.status === 'pending' && (
-                  <button className="flex-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 py-1.5 text-xs text-amber-400 transition-colors inline-flex items-center justify-center gap-1">
+                  <button className={`flex-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/25 py-1.5 text-xs font-medium text-amber-700 dark:text-amber-400 transition-colors inline-flex items-center justify-center gap-1 ${ring}`}>
                     <RefreshCw size={11} /> Test connection
                   </button>
                 )}
                 {v.status === 'connected' && (
-                  <button className="flex-1 rounded-lg bg-slate-800 hover:bg-slate-700 py-1.5 text-xs text-slate-400 transition-colors inline-flex items-center justify-center gap-1">
+                  <button className={`flex-1 rounded-lg border border-gray-200 bg-gray-100/80 hover:bg-gray-200/80 dark:border-transparent dark:bg-slate-800 dark:hover:bg-slate-700 py-1.5 text-xs font-medium ${body} transition-colors inline-flex items-center justify-center gap-1 ${ring}`}>
                     <RefreshCw size={11} /> Sync now
                   </button>
                 )}
-                <button className="rounded-lg bg-slate-800 hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/20 border border-slate-700 p-1.5 text-slate-500 transition-colors">
+                <button aria-label={`Remove ${v.name}`} className={`rounded-lg border border-gray-200 dark:border-slate-700 dark:bg-slate-800 p-1.5 ${muted} hover:bg-red-500/10 hover:text-red-600 dark:hover:text-red-400 hover:border-red-500/25 transition-colors ${ring}`}>
                   <Trash2 size={12} />
                 </button>
               </div>
@@ -547,13 +554,13 @@ export default function OperatorDashboard() {
           ))}
         </div>
 
-        <div className="rounded-xl border border-dashed border-slate-700 bg-slate-900/30 p-4 flex items-start gap-3">
-          <div className="w-8 h-8 rounded-lg bg-brand-600/15 border border-brand-600/20 flex items-center justify-center shrink-0 mt-0.5">
-            <Network size={14} className="text-brand-400" />
+        <div className="rounded-xl border border-dashed border-gray-300 bg-white/60 dark:border-slate-700 dark:bg-slate-900/30 p-4 flex items-start gap-3">
+          <div className="w-8 h-8 rounded-lg bg-brand-500/10 border border-brand-500/20 flex items-center justify-center shrink-0 mt-0.5">
+            <Network size={14} className="text-brand-600 dark:text-brand-400" />
           </div>
           <div>
-            <p className="text-sm font-medium text-white">Vendors drive the client portal</p>
-            <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">
+            <p className={`text-sm font-medium ${heading}`}>Vendors drive the client portal</p>
+            <p className={`text-sm ${sub} mt-0.5 leading-relaxed`}>
               Only vendors you add here appear in the client portal's Market Place and roaming sections.
               Clients can only contract with and see data from these vendors.
             </p>
@@ -566,49 +573,46 @@ export default function OperatorDashboard() {
   function renderPayments() {
     const paidTotal = MOCK_INVOICES.filter(i => i.status === 'paid').reduce((s, i) => s + i.amount, 0);
     return (
-      <div className="p-6 space-y-5">
-        <div>
-          <h1 className="text-lg font-bold text-white mb-1">Payments & Billing</h1>
-          <p className="text-sm text-slate-500">Client invoices and revenue</p>
-        </div>
+      <div className="p-4 sm:p-6 space-y-5">
+        {pageHeader('Payments & Billing', 'Client invoices and revenue')}
 
-        {/* Summary cards */}
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {[
-            { label: 'Collected (all time)', value: `$${paidTotal.toLocaleString()}`, color: 'text-emerald-400' },
-            { label: 'Outstanding',           value: `$${outstanding}`,               color: 'text-amber-400'  },
-            { label: 'Overdue',               value: `$${overdue}`,                   color: 'text-red-400'    },
+            { label: 'Collected (all time)', value: `$${paidTotal.toLocaleString()}`, color: 'text-emerald-700 dark:text-emerald-400' },
+            { label: 'Outstanding',           value: `$${outstanding}`,               color: 'text-amber-700 dark:text-amber-400'  },
+            { label: 'Overdue',               value: `$${overdue}`,                   color: 'text-red-700 dark:text-red-400'    },
           ].map(({ label, value, color }) => (
-            <div key={label} className="rounded-2xl border border-slate-800 bg-slate-900/50 p-4">
-              <p className="text-xs text-slate-500 mb-2">{label}</p>
+            <div key={label} className={`${card} p-4`}>
+              <p className={`text-xs ${muted} mb-2`}>{label}</p>
               <p className={`text-2xl font-bold ${color}`}>{value}</p>
             </div>
           ))}
         </div>
 
-        {/* Invoice table */}
-        <div className="rounded-2xl border border-slate-800 overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-slate-900/80 border-b border-slate-800">
-              <tr>
-                {['Invoice','Client','Period','Amount','Due date','Status'].map(h => (
-                  <th key={h} className="text-left text-[11px] font-semibold text-slate-500 uppercase tracking-wide px-4 py-3">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {MOCK_INVOICES.map((inv, i) => (
-                <tr key={inv.id} className={`border-b border-slate-800/60 last:border-0 ${i % 2 === 0 ? 'bg-slate-900/30' : ''}`}>
-                  <td className="px-4 py-3 font-mono text-slate-400 text-xs">{inv.id}</td>
-                  <td className="px-4 py-3 font-medium text-white">{inv.client}</td>
-                  <td className="px-4 py-3 text-slate-400">{inv.period}</td>
-                  <td className="px-4 py-3 font-mono text-white">${inv.amount.toLocaleString()}</td>
-                  <td className="px-4 py-3 text-slate-400">{inv.dueDate}</td>
-                  <td className="px-4 py-3"><StatusChip status={inv.status} /></td>
+        <div className={`${card} overflow-hidden`}>
+          <div className="relative overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className={theadCls}>
+                <tr>
+                  {['Invoice','Client','Period','Amount','Due date','Status'].map(h => (
+                    <th key={h} scope="col" className={thCls}>{h}</th>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {MOCK_INVOICES.map((inv, i) => (
+                  <tr key={inv.id} className={`border-b border-gray-100 dark:border-slate-800/60 last:border-0 ${i % 2 === 0 ? zebra : ''}`}>
+                    <td className={`px-4 py-3 font-mono text-xs whitespace-nowrap ${sub}`}>{inv.id}</td>
+                    <td className={`px-4 py-3 font-medium whitespace-nowrap ${heading}`}>{inv.client}</td>
+                    <td className={`px-4 py-3 whitespace-nowrap ${sub}`}>{inv.period}</td>
+                    <td className={`px-4 py-3 font-mono ${heading}`}>${inv.amount.toLocaleString()}</td>
+                    <td className={`px-4 py-3 whitespace-nowrap ${sub}`}>{inv.dueDate}</td>
+                    <td className="px-4 py-3"><StatusChip status={inv.status} /></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     );
@@ -616,45 +620,41 @@ export default function OperatorDashboard() {
 
   function renderApiKeys() {
     return (
-      <div className="p-6 space-y-5">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-lg font-bold text-white mb-1">API Keys & Integrations</h1>
-            <p className="text-sm text-slate-500">Manage programmatic access to the RFConnector API</p>
-          </div>
-          <button className="inline-flex items-center gap-2 rounded-xl bg-brand-600 hover:bg-brand-500 px-4 py-2 text-sm font-semibold text-white transition-colors">
+      <div className="p-4 sm:p-6 space-y-5">
+        {pageHeader('API Keys & Integrations', 'Manage programmatic access to the RFConnector API',
+          <button className={`${primaryBtn} self-start shrink-0`}>
             <Plus size={14} /> Generate key
           </button>
-        </div>
+        )}
 
         <div className="space-y-3">
           {apiKeys.map(k => (
-            <div key={k.id} className="rounded-2xl border border-slate-800 bg-slate-900/50 p-4">
+            <div key={k.id} className={`${card} p-4`}>
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-2">
-                    <p className="font-medium text-white text-sm">{k.label}</p>
-                    <span className="text-[10px] text-slate-600">Created {k.created}</span>
-                    <span className="text-[10px] text-slate-600">· Used {k.lastUsed}</span>
+                  <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 mb-2">
+                    <p className={`font-medium text-sm ${heading}`}>{k.label}</p>
+                    <span className={`text-[11px] ${muted}`}>Created {k.created}</span>
+                    <span className={`text-[11px] ${muted}`}>· Used {k.lastUsed}</span>
                   </div>
-                  <div className="flex items-center gap-2 bg-slate-800/60 rounded-lg px-3 py-2 max-w-sm">
-                    <span className="text-xs font-mono text-slate-400 flex-1 truncate">
+                  <div className="flex items-center gap-1 rounded-lg border border-gray-200 bg-gray-50/80 dark:border-transparent dark:bg-slate-800/60 px-3 py-1.5 max-w-sm">
+                    <span className={`text-xs font-mono flex-1 truncate ${body}`}>
                       {k.revealed ? `cb_live_${k.id}_FULL_KEY_DEMO_VALUE` : k.keyPreview}
                     </span>
-                    <button onClick={() => toggleReveal(k.id)} className="text-slate-500 hover:text-slate-300 shrink-0 transition-colors">
+                    <button onClick={() => toggleReveal(k.id)} aria-label={k.revealed ? `Hide ${k.label} key` : `Show ${k.label} key`} className={`${iconBtn} shrink-0`}>
                       {k.revealed ? <EyeOff size={12} /> : <Eye size={12} />}
                     </button>
-                    <button onClick={() => copyText(k.keyPreview, k.id)} className="text-slate-500 hover:text-slate-300 shrink-0 transition-colors">
-                      {copiedId === k.id ? <Check size={12} className="text-emerald-400" /> : <Copy size={12} />}
+                    <button onClick={() => copyText(k.keyPreview, k.id)} aria-label={copiedId === k.id ? 'Copied' : `Copy ${k.label} key`} className={`${iconBtn} shrink-0`}>
+                      {copiedId === k.id ? <Check size={12} className="text-emerald-600 dark:text-emerald-400" /> : <Copy size={12} />}
                     </button>
                   </div>
                   <div className="flex flex-wrap gap-1.5 mt-2">
                     {k.permissions.map(p => (
-                      <span key={p} className="rounded px-1.5 py-0.5 text-[10px] bg-slate-800 text-slate-500 font-mono">{p}</span>
+                      <span key={p} className={`rounded px-1.5 py-0.5 text-[11px] font-mono bg-gray-100 dark:bg-slate-800 ${sub}`}>{p}</span>
                     ))}
                   </div>
                 </div>
-                <button className="text-slate-600 hover:text-red-400 transition-colors shrink-0">
+                <button aria-label={`Delete ${k.label} key`} className={`${iconBtn} hover:!text-red-600 dark:hover:!text-red-400 shrink-0`}>
                   <Trash2 size={14} />
                 </button>
               </div>
@@ -662,15 +662,14 @@ export default function OperatorDashboard() {
           ))}
         </div>
 
-        {/* Webhooks placeholder */}
-        <div className="rounded-2xl border border-slate-800 bg-slate-900/50 p-4">
+        <div className={`${card} p-4`}>
           <div className="flex items-center justify-between mb-4">
-            <p className="text-sm font-semibold text-white">Webhook endpoints</p>
-            <button className="text-xs text-brand-400 hover:text-brand-300 inline-flex items-center gap-1">
+            <h2 className={`text-sm font-semibold ${heading}`}>Webhook endpoints</h2>
+            <button className={`text-xs inline-flex items-center gap-1 ${textLink}`}>
               <Plus size={11} /> Add endpoint
             </button>
           </div>
-          <div className="text-center py-6 text-slate-600 text-sm">
+          <div className={`text-center py-6 text-sm ${muted}`}>
             No webhook endpoints configured.
           </div>
         </div>
@@ -688,38 +687,54 @@ export default function OperatorDashboard() {
     { id: 'apikeys',  label: 'API Keys',    icon: Key },
   ];
 
+  const themeButton = (
+    <button
+      type="button"
+      onClick={toggleTheme}
+      aria-label={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+      className={`inline-flex h-9 w-9 items-center justify-center rounded-lg ${muted} hover:bg-gray-100 hover:text-gray-900 dark:hover:bg-slate-800 dark:hover:text-white transition-colors ${ring}`}
+    >
+      {darkMode ? <Sun size={15} /> : <Moon size={15} />}
+    </button>
+  );
+
   // ── Layout ─────────────────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen bg-slate-950 flex">
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-950 flex flex-col md:flex-row">
 
-      {/* Sidebar */}
-      <aside className="w-56 shrink-0 border-r border-slate-800/60 flex flex-col bg-slate-900/40 h-screen sticky top-0">
+      {/* Sidebar — becomes a top bar with scrollable tabs below md */}
+      <aside className="z-20 w-full md:w-56 shrink-0 flex flex-col border-b md:border-b-0 md:border-r border-gray-200 dark:border-slate-800/60 bg-white/80 dark:bg-slate-900/40 backdrop-blur-xl md:h-screen md:sticky md:top-0">
 
-        {/* Logo */}
-        <div className="h-14 border-b border-slate-800/60 flex items-center px-4 gap-2 shrink-0">
+        <div className="h-14 border-b border-gray-200 dark:border-slate-800/60 flex items-center px-4 gap-2 shrink-0">
           <div className="flex h-7 w-7 items-center justify-center rounded-md bg-brand-600">
             <Zap size={13} className="text-white" />
           </div>
-          <div>
-            <p className="text-sm font-bold text-white leading-none">RFConnector</p>
-            <p className="text-[9px] text-slate-600 uppercase tracking-widest mt-0.5">Operator Console</p>
+          <div className="flex-1">
+            <p className={`text-sm font-bold leading-none ${heading}`}>RFConnector</p>
+            <p className={`text-[10px] uppercase tracking-widest mt-0.5 ${muted}`}>Operator Console</p>
+          </div>
+          <div className="flex items-center gap-1 md:hidden">
+            {themeButton}
+            <button onClick={signOut} aria-label="Sign out" className={`inline-flex h-9 w-9 items-center justify-center rounded-lg ${muted} hover:bg-red-500/10 hover:text-red-600 dark:hover:text-red-400 transition-colors ${ring}`}>
+              <LogOut size={15} />
+            </button>
           </div>
         </div>
 
-        {/* Nav */}
-        <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto">
+        <nav aria-label="Operator sections" className="flex md:flex-col md:flex-1 gap-1 md:gap-0.5 p-2 md:p-3 overflow-x-auto md:overflow-y-auto scrollbar-none">
           {NAV.map(({ id, label, icon: Icon, badge }) => (
             <button key={id} onClick={() => setActiveNav(id)}
-              className={`w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors ${
+              aria-current={activeNav === id ? 'page' : undefined}
+              className={`shrink-0 md:w-full flex items-center gap-2.5 md:gap-3 rounded-xl px-3 py-2 md:py-2.5 text-sm whitespace-nowrap transition-colors border ${ring} ${
                 activeNav === id
-                  ? 'bg-brand-600/20 text-brand-300 border border-brand-600/30'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                  ? 'bg-brand-500/10 text-brand-700 border-brand-500/30 dark:bg-brand-600/20 dark:text-brand-400 dark:border-brand-600/30'
+                  : `border-transparent ${sub} hover:text-gray-900 hover:bg-gray-100 dark:hover:text-white dark:hover:bg-slate-800/60`
               }`}>
               <Icon size={14} />
               <span className="flex-1 text-left">{label}</span>
               {badge ? (
-                <span className="rounded-full bg-red-500 text-white text-[10px] font-bold w-4 h-4 flex items-center justify-center">
+                <span className="rounded-full bg-red-500 text-white text-[10px] font-bold min-w-4 h-4 px-1 flex items-center justify-center" aria-label={`${badge} needs attention`}>
                   {badge}
                 </span>
               ) : null}
@@ -727,30 +742,30 @@ export default function OperatorDashboard() {
           ))}
         </nav>
 
-        {/* Footer */}
-        <div className="p-3 border-t border-slate-800/60 space-y-1.5">
-          <a href={CLIENT_BASE_URL} target="_blank" rel="noopener noreferrer"
-            className="w-full flex items-center gap-2 rounded-xl px-3 py-2 text-xs text-slate-500 hover:text-white hover:bg-slate-800/60 transition-colors">
-            <Globe size={12} /> Client Portal <ExternalLink size={10} className="ml-auto" />
-          </a>
+        <div className="hidden md:block p-3 border-t border-gray-200 dark:border-slate-800/60 space-y-1.5">
+          <div className="flex items-center gap-1">
+            <a href={CLIENT_BASE_URL} target="_blank" rel="noopener noreferrer"
+              className={`flex-1 flex items-center gap-2 rounded-xl px-3 py-2 text-xs ${sub} hover:text-gray-900 hover:bg-gray-100 dark:hover:text-white dark:hover:bg-slate-800/60 transition-colors ${ring}`}>
+              <Globe size={12} /> Client Portal <ExternalLink size={10} className="ml-auto" />
+            </a>
+            {themeButton}
+          </div>
 
-          {/* User row */}
-          <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-800/40">
-            <div className="w-7 h-7 rounded-full bg-brand-600/30 border border-brand-600/20 flex items-center justify-center shrink-0">
-              <span className="text-[11px] font-bold text-brand-300">
+          <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-gray-100/80 dark:bg-slate-800/40">
+            <div className="w-7 h-7 rounded-full bg-brand-500/15 border border-brand-500/25 flex items-center justify-center shrink-0">
+              <span className="text-[11px] font-bold text-brand-700 dark:text-brand-400">
                 {session?.email?.[0]?.toUpperCase() ?? 'O'}
               </span>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-[11px] text-slate-300 font-medium truncate">{session?.email ?? 'operator'}</p>
-              <p className="text-[10px] text-slate-600">Operator</p>
+              <p className={`text-xs font-medium truncate ${body}`}>{session?.email ?? 'operator'}</p>
+              <p className={`text-[11px] ${muted}`}>Operator</p>
             </div>
           </div>
 
-          {/* Sign out button */}
           <button
             onClick={signOut}
-            className="w-full flex items-center justify-center gap-2 rounded-xl border border-slate-700/60 bg-slate-800/40 px-3 py-2 text-xs font-medium text-slate-400 hover:bg-red-500/10 hover:border-red-500/30 hover:text-red-400 transition-all"
+            className={`w-full flex items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white/70 dark:border-slate-700/60 dark:bg-slate-800/40 px-3 py-2 text-xs font-medium ${sub} hover:bg-red-500/10 hover:border-red-500/30 hover:text-red-600 dark:hover:text-red-400 transition-all ${ring}`}
           >
             <LogOut size={13} />
             Sign out
@@ -758,8 +773,7 @@ export default function OperatorDashboard() {
         </div>
       </aside>
 
-      {/* Main */}
-      <main className="flex-1 overflow-y-auto">
+      <main className="flex-1 min-w-0 overflow-y-auto">
         {activeNav === 'overview' && renderOverview()}
         {activeNav === 'clients'  && renderClients()}
         {activeNav === 'vendors'  && renderVendors()}
@@ -767,7 +781,6 @@ export default function OperatorDashboard() {
         {activeNav === 'apikeys'  && renderApiKeys()}
       </main>
 
-      {/* Modals */}
       {showAddClient && (
         <AddClientModal
           onClose={() => setShowAddClient(false)}

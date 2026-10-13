@@ -157,6 +157,15 @@ html.dark .portal-sidebar .hover\:text-slate-200:hover { color: #e2e8f0 !importa
 html.dark ::-webkit-scrollbar-track { background: #020617; }
 html.dark ::-webkit-scrollbar-thumb { background: #334155; }
 
+/* Scrollbar in light mode (base layer defaults are dark) */
+html:not(.dark) ::-webkit-scrollbar-track { background: #f1f5f9; }
+html:not(.dark) ::-webkit-scrollbar-thumb { background: #cbd5e1; }
+html:not(.dark) ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+/* Swipeable tab strips: scroll without a visible scrollbar */
+.scrollbar-none { scrollbar-width: none; }
+.scrollbar-none::-webkit-scrollbar { display: none; }
+
 /* ── Portal light mode enhancements ─────────────────────────────────────────── */
 
 /* Page background — very subtle blue-tinted surface */
