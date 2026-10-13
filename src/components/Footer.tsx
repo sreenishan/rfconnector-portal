@@ -1,12 +1,18 @@
 import { Zap } from 'lucide-react';
-import { Link } from 'react-router-dom';
+
+// Only sections that exist; add Developer/Legal columns back once those pages are live.
+const productLinks = [
+  { label: 'Features',     href: '#features'     },
+  { label: 'How it works', href: '#how-it-works' },
+  { label: 'Pricing',      href: '#pricing'      },
+];
 
 export default function Footer() {
   return (
     <footer className="border-t border-gray-200 dark:border-slate-800 bg-gray-50 dark:bg-slate-950">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-10">
-          <div className="col-span-2 md:col-span-1">
+        <div className="flex flex-col sm:flex-row sm:justify-between gap-8 mb-10">
+          <div className="max-w-xs">
             <div className="flex items-center gap-2 mb-3">
               <div className="flex h-7 w-7 items-center justify-center rounded-md bg-brand-600">
                 <Zap size={14} className="text-white" />
@@ -20,24 +26,8 @@ export default function Footer() {
           <div>
             <h4 className="text-xs font-semibold text-gray-400 dark:text-slate-400 uppercase tracking-wider mb-3">Product</h4>
             <ul className="space-y-2">
-              {['Features', 'Pricing', 'Changelog', 'Status'].map(l => (
-                <li key={l}><a href="#" className="text-sm text-gray-500 dark:text-slate-500 hover:text-gray-900 dark:hover:text-slate-300 transition-colors">{l}</a></li>
-              ))}
-            </ul>
-          </div>
-          <div>
-            <h4 className="text-xs font-semibold text-gray-400 dark:text-slate-400 uppercase tracking-wider mb-3">Developers</h4>
-            <ul className="space-y-2">
-              {['Documentation', 'API Reference', 'SDKs', 'Webhooks'].map(l => (
-                <li key={l}><a href="#" className="text-sm text-gray-500 dark:text-slate-500 hover:text-gray-900 dark:hover:text-slate-300 transition-colors">{l}</a></li>
-              ))}
-            </ul>
-          </div>
-          <div>
-            <h4 className="text-xs font-semibold text-gray-400 dark:text-slate-400 uppercase tracking-wider mb-3">Legal</h4>
-            <ul className="space-y-2">
-              {['Privacy Policy', 'Terms of Service', 'GDPR', 'Ghana DPA'].map(l => (
-                <li key={l}><a href="#" className="text-sm text-gray-500 dark:text-slate-500 hover:text-gray-900 dark:hover:text-slate-300 transition-colors">{l}</a></li>
+              {productLinks.map(({ label, href }) => (
+                <li key={label}><a href={href} className="text-sm text-gray-500 dark:text-slate-500 hover:text-gray-900 dark:hover:text-slate-300 transition-colors">{label}</a></li>
               ))}
             </ul>
           </div>

@@ -4,7 +4,7 @@
   "configurations": [
     {
       "name": "RFConnector Portal Dev",
-      "runtimeExecutable": "C:\\Program Files\\nodejs\\npm.cmd",
+      "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev"],
       "port": 5174
     }

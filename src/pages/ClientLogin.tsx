@@ -30,13 +30,15 @@ export interface ClientSession {
   loginAt:  string;
 }
 
-// ── Dev fallback — never shown in UI ─────────────────────────────────────────
+// ── Dev-only demo accounts (DEV guard lets Vite strip them from production) ──
 
-const _DEV_ACCOUNTS = [
+const _DEV_ACCOUNTS = import.meta.env.DEV ? [
   { email: 'demo@volta-networks.com', password: 'demo1234', role: 'admin',  fullName: 'Volta Networks' },
   { email: 'ops@powergrid.io',        password: 'demo1234', role: 'viewer', fullName: 'PowerGrid LatAm' },
   { email: 'client@rfconnector.io',  password: 'demo1234', role: 'admin',  fullName: 'RFConnector' },
-];
+] : [];
+
+const NOT_CONFIGURED_MSG = 'Sign-in is unavailable: the authentication service is not configured.';
 
 const API_BASE = import.meta.env.VITE_API_URL ?? '';
 
@@ -123,8 +125,7 @@ export default function ClientLogin() {
           company:  json.data.user.fullName ?? 'Client account',
           loginAt:  new Date().toISOString(),
         };
-      } else {
-        // Dev fallback
+      } else if (import.meta.env.DEV) {
         await new Promise(r => setTimeout(r, 700));
         const match = _DEV_ACCOUNTS.find(
           a => a.email === email.trim().toLowerCase() && a.password === password,
@@ -142,6 +143,10 @@ export default function ClientLogin() {
           company: match.fullName,
           loginAt: new Date().toISOString(),
         };
+      } else {
+        setError(NOT_CONFIGURED_MSG);
+        setLoading(false);
+        return;
       }
 
       setLoading(false);
@@ -182,8 +187,8 @@ export default function ClientLogin() {
         const session: ClientSession = { ...pendingSession.current!, token: json.data.token };
         const storage = remember ? localStorage : sessionStorage;
         storage.setItem(CLIENT_SESSION_KEY, JSON.stringify(session));
-      } else {
-        // Dev fallback — any 6-digit code
+      } else if (import.meta.env.DEV) {
+        // Any 6-digit code is accepted in dev
         await new Promise(r => setTimeout(r, 500));
         if (!/^\d{6}$/.test(otp)) {
           setError('Enter a 6-digit numeric code.');
@@ -192,6 +197,10 @@ export default function ClientLogin() {
         }
         const storage = remember ? localStorage : sessionStorage;
         storage.setItem(CLIENT_SESSION_KEY, JSON.stringify(pendingSession.current!));
+      } else {
+        setError(NOT_CONFIGURED_MSG);
+        setLoading(false);
+        return;
       }
 
       setSuccess(true);

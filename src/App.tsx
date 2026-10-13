@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { PORTAL_TYPE } from './lib/hostConfig.ts';
 import { CLIENT_SESSION_KEY } from './pages/ClientLogin.tsx';
@@ -6,10 +7,16 @@ import { OPERATOR_SESSION_KEY } from './pages/DeveloperLogin.tsx';
 // ── Page imports ──────────────────────────────────────────────────────────────
 import Home              from './pages/Home.tsx';
 import Register          from './pages/Register.tsx';
-import ClientPortal      from './pages/ClientPortal.tsx';
 import ClientLogin       from './pages/ClientLogin.tsx';
 import DeveloperLogin    from './pages/DeveloperLogin.tsx';
-import OperatorDashboard from './pages/OperatorDashboard.tsx';
+
+// Heavy authenticated pages load on demand so public pages don't pull in Supabase/Leaflet.
+const ClientPortal      = lazy(() => import('./pages/ClientPortal.tsx'));
+const OperatorDashboard = lazy(() => import('./pages/OperatorDashboard.tsx'));
+
+function PageFallback() {
+  return <div className="min-h-screen bg-gray-50 dark:bg-slate-950" aria-busy="true" />;
+}
 
 // ── Auth guards ───────────────────────────────────────────────────────────────
 
@@ -51,6 +58,7 @@ function RequireClientAuth({ children }: { children: React.ReactNode }) {
 function ClientPortalApp() {
   return (
     <BrowserRouter>
+      <Suspense fallback={<PageFallback />}>
       <Routes>
         <Route path="/login" element={<ClientLogin />} />
         <Route
@@ -64,6 +72,7 @@ function ClientPortalApp() {
         {/* Catch-all → root (guarded, so unauthenticated → /login) */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      </Suspense>
     </BrowserRouter>
   );
 }
@@ -79,6 +88,7 @@ function ClientPortalApp() {
 function OperatorDashboardApp() {
   return (
     <BrowserRouter>
+      <Suspense fallback={<PageFallback />}>
       <Routes>
         <Route path="/"          element={<Home />} />
         <Route path="/register"  element={<Register />} />
@@ -97,6 +107,7 @@ function OperatorDashboardApp() {
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      </Suspense>
     </BrowserRouter>
   );
 }

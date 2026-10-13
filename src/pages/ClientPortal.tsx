@@ -9453,7 +9453,7 @@ function DisputesDashboard() {
   const [disputes, setDisputes] = useState<DisputeRecord[]>(ALL_DISPUTES);
   useEffect(() => {
     fetchDisputes(VOLTA_TENANT_ID).then(rows => {
-      if (rows.length) setDisputes(rows.map(r => ({ ...r, resolution: r.resolution ?? undefined })));
+      if (rows.length) setDisputes(rows.map(r => ({ ...r, resolution: r.resolution ?? undefined }) as DisputeRecord));
     });
   }, []);
   const detailRef = useRef<HTMLDivElement>(null);

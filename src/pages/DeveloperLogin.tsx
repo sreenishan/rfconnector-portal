@@ -22,11 +22,13 @@ export interface OperatorSession {
   loginAt:  string;
 }
 
-// Dev fallback — never rendered in UI
-const _DEV_ACCOUNTS = [
+// Dev-only demo accounts; the DEV guard lets Vite strip them from production bundles.
+const _DEV_ACCOUNTS = import.meta.env.DEV ? [
   { email: 'admin@rfconnector.io', password: 'admin1234', name: 'RFConnector Admin',    userId: 'dev_admin_1' },
   { email: 'ops@rfconnector.io',   password: 'admin1234', name: 'Operations Manager',   userId: 'dev_ops_1'   },
-];
+] : [];
+
+const NOT_CONFIGURED_MSG = 'Sign-in is unavailable: the authentication service is not configured.';
 
 const API_BASE = import.meta.env.VITE_API_URL ?? '';
 
@@ -97,8 +99,7 @@ export default function DeveloperLogin() {
           email:    email.trim(),
           loginAt:  new Date().toISOString(),
         };
-      } else {
-        // Dev fallback
+      } else if (import.meta.env.DEV) {
         await new Promise(r => setTimeout(r, 600));
         const match = _DEV_ACCOUNTS.find(
           a => a.email === email.trim().toLowerCase() && a.password === password,
@@ -115,6 +116,10 @@ export default function DeveloperLogin() {
           email:    match.email,
           loginAt:  new Date().toISOString(),
         };
+      } else {
+        setError(NOT_CONFIGURED_MSG);
+        setLoading(false);
+        return;
       }
 
       setLoading(false);
@@ -159,8 +164,8 @@ export default function DeveloperLogin() {
           token: json.data.token,
         };
         sessionStorage.setItem(OPERATOR_SESSION_KEY, JSON.stringify(session));
-      } else {
-        // Dev fallback — any 6-digit code works
+      } else if (import.meta.env.DEV) {
+        // Any 6-digit code is accepted in dev
         await new Promise(r => setTimeout(r, 500));
         if (!/^\d{6}$/.test(otp)) {
           setError('Enter a 6-digit numeric code.');
@@ -171,6 +176,10 @@ export default function DeveloperLogin() {
           OPERATOR_SESSION_KEY,
           JSON.stringify(pendingSession.current!),
         );
+      } else {
+        setError(NOT_CONFIGURED_MSG);
+        setLoading(false);
+        return;
       }
 
       setSuccess(true);
