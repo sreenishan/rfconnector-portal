@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import Navbar from '../components/Navbar.tsx';
 import Footer from '../components/Footer.tsx';
+import { usePageTitle } from '../hooks/usePageTitle';
 
 // ── Data ──────────────────────────────────────────────────────────────────────
 
@@ -141,6 +142,8 @@ const lift     = 'motion-safe:transition-transform motion-safe:duration-200 moti
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function Home() {
+  usePageTitle('RFConnector — Universal EV Charging Connector SDK');
+
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 dark:bg-slate-950 dark:text-slate-100 antialiased">
       <Navbar />
@@ -469,7 +472,7 @@ export default function Home() {
 
           <div className={`rounded-2xl ${card} p-8`}>
             <p className={`text-center text-xs font-bold uppercase tracking-[0.2em] ${muted} mb-8`}>
-              Network reach via ChargeBridge Roaming
+              Network reach via RFConnector Roaming
             </p>
             <dl className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
               {roamingStats.map(({ label, value }) => (

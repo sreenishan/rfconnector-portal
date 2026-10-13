@@ -8,6 +8,7 @@
  *  Clearing  : Supervision · Tracking · Check & Bill · Disputes · Invoicing · Messaging
  */
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { usePageTitle } from '../hooks/usePageTitle';
 import { fetchDashboardKPIs, fetchMarketplaceNetworks, fetchDisputes, fetchInvoices, fetchHubjectNetworks, VOLTA_TENANT_ID, type DashboardKPIs, type DbNetwork, type DbDispute, type DbInvoice, type HubjectNetworkSummary } from '../lib/supabase';
 import { useTheme } from '../hooks/useTheme';
 import { useLocalStorage } from '../hooks/useLocalStorage';
@@ -32,7 +33,7 @@ import {
   Navigation,
 } from 'lucide-react';
 
-// â"₵â"₵ Types â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵
+// ── Types ─────────────────────────────────────────────────────────────────────
 
 type NavId =
   | 'overview' | 'company'
@@ -94,7 +95,7 @@ interface WorkspaceView {
   body: React.ReactNode;
 }
 
-// â"₵â"₵ Navigation â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵
+// ── Navigation ─────────────────────────────────────────────────────────────────
 
 const NAV_GROUPS: NavGroup[] = [
   {
@@ -274,7 +275,7 @@ const MARKETPLACE_ACCESS_POINTS: MarketplaceAccessPoint[] = [
   { id: 'EVSE-DE-UBI-060', name: 'Ubitricity Hamburg Altona',        network: 'Ubitricity',             city: 'Hamburg',       country: 'DE', status: 'Charging',    connectors: '6 Type 2 (lamppost)', power: '22 kW AC',  protocol: 'OCPI 2.2', tariff: 'TARIFF-DE-UBITRICITY', lat: 53.5488, lng:  9.9350, x: 50, y: 26, lastUpdated: '3 min ago',  connectorCount: 6,  maxPower: '22 kW'  },
 ];
 
-// â"₵â"₵ Shared UI Atoms â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵
+// ── Shared UI Atoms ───────────────────────────────────────────────────────────
 
 const Badge = ({ n }: { n: number }) => (
   <span className="ml-auto bg-rose-500 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">
@@ -368,9 +369,9 @@ const SearchBar = ({ placeholder }: { placeholder?: string }) => (
   </div>
 );
 
-// â"₵â"₵ Section Renderers â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵
+// ── Section Renderers ─────────────────────────────────────────────────────────
 
-// â"₵â"₵ Analytics â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵
+// ── Analytics ─────────────────────────────────────────────────────────────────
 
 function renderAnalytics() {
   const CHART_H = 120;
@@ -417,7 +418,7 @@ function renderAnalytics() {
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-1.5 text-xs text-slate-500 border border-slate-200 rounded-lg px-3 py-2 bg-white">
             <CalendarRange size={13} />
-            Jan â₵" Jun 2025
+            Jan – Jun 2025
           </div>
           <button className="flex items-center gap-1.5 text-xs font-medium text-white bg-violet-600 hover:bg-violet-700 transition-colors rounded-lg px-3 py-2" data-local>
             <Download size={13} />
@@ -453,7 +454,7 @@ function renderAnalytics() {
           <div className="flex items-center justify-between mb-4">
             <div>
               <p className="text-sm font-semibold text-slate-700">CDR Volume</p>
-              <p className="text-xs text-slate-400">Monthly, Janâ₵"Jun 2025</p>
+              <p className="text-xs text-slate-400">Monthly, Jan–Jun 2025</p>
             </div>
             <span className="text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">→ +54% YTD</span>
           </div>
@@ -607,7 +608,7 @@ function renderAnalytics() {
   );
 }
 
-// â"₵â"₵ Plug & Charge â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵
+// ── Plug & Charge ──────────────────────────────────────────────────────────────
 
 function renderPlugCharge() {
   const stations = [
@@ -727,7 +728,7 @@ function renderPlugCharge() {
   );
 }
 
-// â"₵â"₵ Smart Charging â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵
+// ── Smart Charging ─────────────────────────────────────────────────────────────
 
 function renderSmartCharging() {
   const schedules = [
@@ -824,7 +825,7 @@ function renderSmartCharging() {
                   <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${signalColor(s.signal)}`}>{s.signal}</span>
                 </td>
                 <td className="px-4 py-3 text-xs text-slate-500 whitespace-nowrap">{s.source}</td>
-                <td className="px-4 py-3 text-xs text-slate-600 whitespace-nowrap">{s.start} â₵" {s.end}</td>
+                <td className="px-4 py-3 text-xs text-slate-600 whitespace-nowrap">{s.start} – {s.end}</td>
                 <td className="px-4 py-3 text-xs font-semibold text-slate-700">{s.saving}</td>
                 <td className="px-4 py-3">
                   <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${statusColor[s.status]}`}>{s.status}</span>
@@ -838,9 +839,9 @@ function renderSmartCharging() {
   );
 }
 
-// â"₵â"₵ Company â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵
+// ── Company ────────────────────────────────────────────────────────────────────
 
-// â"₵â"₵ Company / Tenant Admin Portal â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵
+// ── Company / Tenant Admin Portal ────────────────────────────────────────────
 // ── Organisation Management Center ─────────────────────────────────────────
 
 type OrgTab = 'overview'|'health'|'contacts'|'agreements'|'network'|'users'|'finance'|'docs'|'notifications'|'audit';
@@ -1675,9 +1676,9 @@ function renderCompany() {
   return <CompanyWorkspace />;
 }
 
-// â"₵â"₵ Overview â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵
+// ── Overview ───────────────────────────────────────────────────────────────────
 
-// â"₵â"₵ Overview sparkline helper â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵
+// ── Overview sparkline helper ─────────────────────────────────────────────────
 function Sparkline({ data, color = '#6366f1', w = 80, h = 28 }: { data: number[]; color?: string; w?: number; h?: number }) {
   if (data.length < 2) return null;
   const min = Math.min(...data), max = Math.max(...data);
@@ -1694,7 +1695,7 @@ function Sparkline({ data, color = '#6366f1', w = 80, h = 28 }: { data: number[]
   );
 }
 
-// â"₵â"₵ Overview Workspace â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵
+// ── Overview Workspace ────────────────────────────────────────────────────────
 function OverviewWorkspace({ goTo }: { goTo: (id: NavId) => void }) {
   const [dismissedAlerts, setDismissedAlerts] = useState<string[]>([]);
   const [refreshTs, setRefreshTs] = useState('Just now');
@@ -1824,7 +1825,7 @@ function OverviewWorkspace({ goTo }: { goTo: (id: NavId) => void }) {
       {/* EV Stations Nearby — live TomTom data or sample fallback */}
       <LiveStationsPanel goTo={goTo} stations={liveStations} loading={liveLoading} isDemo={liveIsDemo} updatedAt={liveUpdatedAt} />
 
-      {/* â"₵â"₵ Primary KPI row â"₵â"₵ */}
+      {/* ── Primary KPI row ── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
           { title:'Active Sessions',  value: liveLoading ? '…' : String(liveActiveSessions),  sub:'Right now · live',  icon:Zap,           trend:'+12%',  up:true,  spark:[42,55,48,61,70,74,liveActiveSessions||78], color:'#6366f1', nav:'events'       as NavId, badge:'Live' },
@@ -1853,7 +1854,7 @@ function OverviewWorkspace({ goTo }: { goTo: (id: NavId) => void }) {
         ))}
       </div>
 
-      {/* â"₵â"₵ Secondary KPI row â"₵â"₵ */}
+      {/* ── Secondary KPI row ── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
           { title:'Active Partners',   value: liveLoading ? '…' : String(liveActivePartners || 16),  sub:'CPOs + eMSPs · live',      icon:Network,    spark:[10,11,12,13,15,liveActivePartners||16],    nav:'marketplace'  as NavId },
@@ -1875,7 +1876,7 @@ function OverviewWorkspace({ goTo }: { goTo: (id: NavId) => void }) {
         ))}
       </div>
 
-      {/* â"₵â"₵ Quick Actions â"₵â"₵ */}
+      {/* ── Quick Actions ── */}
       <div className="bg-white rounded-xl border border-slate-100 px-4 py-3 flex items-center gap-2 flex-wrap">
         <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mr-2">Quick Actions</span>
         {[
@@ -1992,7 +1993,7 @@ function OverviewWorkspace({ goTo }: { goTo: (id: NavId) => void }) {
         </div>
       </div>
 
-      {/* â"₵â"₵ 2-col: CDR Volume + Revenue Forecast â"₵â"₵ */}
+      {/* ── 2-col: CDR Volume + Revenue Forecast ── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
         {/* CDR Volume */}
@@ -2325,7 +2326,7 @@ function renderOverview(goTo: (id: NavId) => void) {
 }
 
 
-// â"₵â"₵ Ghana EV Map (Leaflet / OpenStreetMap) â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵
+// ── Ghana EV Map (Leaflet / OpenStreetMap) ────────────────────────────────────
 import L from 'leaflet';
 
 interface GhanaEVMapProps {
@@ -2470,7 +2471,7 @@ function RegionalEVMap({ accessPoints, selectedNetwork, selectedAccessPoint, onS
   );
 }
 
-// â"₵â"₵ Marketplace Workspace â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵
+// ── Marketplace Workspace ──────────────────────────────────────────────────────
 function MarketplaceWorkspace() {
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('All Roles');
@@ -2888,7 +2889,7 @@ function MarketplaceWorkspace() {
         }
       />
 
-      {/* â"₵â"₵ Marketplace Health KPI row â"₵â"₵ */}
+      {/* ── Marketplace Health KPI row ── */}
       <div className="grid grid-cols-4 gap-3">
         {[
           { key:'Active',      label:'Active Networks',       value:activeNets,              icon:CheckCircle, color:'text-emerald-600', bg:'bg-emerald-50 border-emerald-200', sub:`${networks.filter(n=>n.status==='Active' && n.connectionHealth==='excellent').length} excellent health` },
@@ -2916,7 +2917,7 @@ function MarketplaceWorkspace() {
         })}
       </div>
 
-      {/* â"₵â"₵ Global search + filters â"₵â"₵ */}
+      {/* ── Global search + filters ── */}
       <div className="bg-white rounded-xl border border-slate-200 px-4 py-3 flex flex-wrap gap-3 items-center shadow-sm">
         <div className="relative flex-1 min-w-48">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -2951,7 +2952,7 @@ function MarketplaceWorkspace() {
         <span className="text-xs text-slate-400 ml-auto">{filteredNetworks.length} / {networks.length} networks</span>
       </div>
 
-      {/* â"₵â"₵ Discovery Dashboard + detail panel â"₵â"₵ */}
+      {/* ── Discovery Dashboard + detail panel ── */}
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-4">
 
         {/* Discovery Dashboard */}
@@ -3110,7 +3111,7 @@ function MarketplaceWorkspace() {
           </div>
         </div>
 
-        {/* â"₵â"₵ Network detail panel â"₵â"₵ */}
+        {/* ── Network detail panel ── */}
         <div className="rounded-xl border border-slate-200 bg-white shadow-sm flex flex-col">
           {/* Header */}
           <div className="px-5 pt-4 pb-3 border-b border-slate-100">
@@ -3253,7 +3254,7 @@ function MarketplaceWorkspace() {
         </div>
       </div>
 
-      {/* â"₵â"₵ Network Lifecycle Funnel â"₵â"₵ */}
+      {/* ── Network Lifecycle Funnel ── */}
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm px-6 py-4">
         <div className="flex items-center gap-2 mb-4">
           <TrendingUp className="w-4 h-4 text-indigo-500" />
@@ -3291,7 +3292,7 @@ function MarketplaceWorkspace() {
         </div>
       </div>
 
-      {/* â"₵â"₵ Networks table â"₵â"₵ */}
+      {/* ── Networks table ── */}
       <div className="bg-white rounded-xl border border-slate-100 shadow-sm">
         <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-100">
           <span className="text-sm font-semibold text-slate-700">All Networks</span>
@@ -3319,7 +3320,7 @@ function MarketplaceWorkspace() {
         />
       </div>
 
-      {/* â"₵â"₵ Add Network Modal â"₵â"₵ */}
+      {/* ── Add Network Modal ── */}
       {showAddModal && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4" style={{ background: 'rgba(15,23,42,0.55)', backdropFilter: 'blur(4px)' }}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg flex flex-col overflow-hidden" style={{ maxHeight: '90vh' }}>
@@ -3367,7 +3368,7 @@ function MarketplaceWorkspace() {
                   </div>
                   <h3 className="font-semibold text-slate-800 text-lg mb-1">Network submitted!</h3>
                   <p className="text-sm text-slate-500 max-w-sm">
-                    <strong>{addForm.name}</strong> has been submitted for review. Our team will verify the network details and initiate the onboarding process within 1â₵"2 business days.
+                    <strong>{addForm.name}</strong> has been submitted for review. Our team will verify the network details and initiate the onboarding process within 1–2 business days.
                   </p>
                   <div className="mt-4 w-full rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 text-left space-y-1">
                     {[
@@ -3532,7 +3533,7 @@ function MarketplaceWorkspace() {
                 <>
                   <button data-local="" onClick={addStep === 1 ? closeAddModal : () => setAddStep(s => s - 1)}
                     className="border border-slate-200 text-slate-600 text-sm px-4 py-2 rounded-lg hover:bg-slate-50 font-medium">
-                    {addStep === 1 ? 'Cancel' : 'â† Back'}
+                    {addStep === 1 ? 'Cancel' : '← Back'}
                   </button>
                   {addStep < 3 ? (
                     <button data-local=""
@@ -3555,7 +3556,7 @@ function MarketplaceWorkspace() {
         </div>
       )}
 
-      {/* â"₵â"₵ EVSE Details Modal â"₵â"₵ */}
+      {/* ── EVSE Details Modal ── */}
       {showEvseModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[10000] p-4">
           <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
@@ -3658,7 +3659,7 @@ function MarketplaceWorkspace() {
 
 function renderMarketplace(_state: MarketplaceState) { return <MarketplaceWorkspace />; }
 
-// â"₵â"₵ Negotiation Workspace â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵
+// ── Negotiation Workspace ──────────────────────────────────────────────────────
 const NEG_STAGES = ['Draft', 'Proposal Sent', 'Under Review', 'Counter Proposal', 'Accepted', 'Signature'] as const;
 type NegStage = typeof NEG_STAGES[number];
 
@@ -3682,8 +3683,8 @@ const NEGOTIATIONS: Negotiation[] = [
     direction: 'Outbound', stage: 'Counter Proposal', priority: 'high',
     deadline: '2026-07-10', overdue: false, lastActivity: '2h ago',
     requiresAction: true, actionLabel: 'Review counter proposal',
-    ourOffer: { tariff: 'TARIFF-GH-STD-01', rate: '₵ 0.32/kWh', validity: '1 Jul 2026 â₵" 30 Jun 2027', type: 'Bilateral', terms: 'Standard EU terms v2.1includes OCPI 2.2.1 push, real-time CDR, 30-day clearing.', setupFee: '₵ 0', minVolume: '500 MWh/yr' },
-    theirOffer:  { tariff: 'TARIFF-GH-ECO-03', rate: '₵ 0.28/kWh', validity: '1 Jul 2026 â₵" 30 Jun 2027', type: 'Bilateral', terms: 'Revised rate based on forecasted 800 MWh/yr volume commitment. All other terms accepted.', setupFee: '₵ 0', minVolume: '800 MWh/yr' },
+    ourOffer: { tariff: 'TARIFF-GH-STD-01', rate: '₵ 0.32/kWh', validity: '1 Jul 2026 – 30 Jun 2027', type: 'Bilateral', terms: 'Standard EU terms v2.1 — includes OCPI 2.2.1 push, real-time CDR, 30-day clearing.', setupFee: '₵ 0', minVolume: '500 MWh/yr' },
+    theirOffer:  { tariff: 'TARIFF-GH-ECO-03', rate: '₵ 0.28/kWh', validity: '1 Jul 2026 – 30 Jun 2027', type: 'Bilateral', terms: 'Revised rate based on forecasted 800 MWh/yr volume commitment. All other terms accepted.', setupFee: '₵ 0', minVolume: '800 MWh/yr' },
     messages: [
       { author: 'You', time: '20 Jun 2026 · 09:15', text: 'We propose standard EU tariff at ₵ 0.32/kWh under TARIFF-GH-STD-01. Validity: 1 Jul 2026 to 30 Jun 2027. Please review and confirm.' },
       { author: 'VRA EV Charge', time: '21 Jun 2026 · 14:30', text: 'Thanks for the proposal. We can commit to ₵ 0.28/kWh given our expected volume of 800 MWh/yr. All other terms are acceptable.' },
@@ -3702,7 +3703,7 @@ const NEGOTIATIONS: Negotiation[] = [
     direction: 'Bilateral', stage: 'Under Review', priority: 'high',
     deadline: '2026-07-05', overdue: false, lastActivity: '1d ago',
     requiresAction: true, actionLabel: 'Sign amendment addendum',
-    ourOffer: { tariff: 'TARIFF-GH-BIL-02', rate: '₵ 0.29/kWh', validity: '1 Aug 2026 â₵" 31 Jul 2027', type: 'Bilateral', terms: 'Amendment to AGR-2025-0029updated CDR validation frequency to real-time.', setupFee: '₵ 250', minVolume: '200 MWh/yr' },
+    ourOffer: { tariff: 'TARIFF-GH-BIL-02', rate: '₵ 0.29/kWh', validity: '1 Aug 2026 – 31 Jul 2027', type: 'Bilateral', terms: 'Amendment to AGR-2025-0029 — updated CDR validation frequency to real-time.', setupFee: '₵ 250', minVolume: '200 MWh/yr' },
     messages: [
       { author: 'Shell Ghana EV', time: '22 Jun 2026 · 11:00', text: 'Amendment documentation is ready. We need your signature on the addendum to proceed.' },
       { author: 'You', time: '22 Jun 2026 · 12:30', text: 'Reviewing the addendum now. Will respond by end of day.' },
@@ -3737,7 +3738,7 @@ const NEGOTIATIONS: Negotiation[] = [
     direction: 'Outbound', stage: 'Proposal Sent', priority: 'medium',
     deadline: '2026-07-25', overdue: false, lastActivity: '5d ago',
     requiresAction: false,
-    ourOffer: { tariff: 'TARIFF-GH-DC-01', rate: '₵ 0.38/kWh', validity: '1 Aug 2026 â₵" 31 Jul 2027', type: 'Outbound', terms: 'DC fast charging outbound terms. HPC-specific SLAs, 99.5% uptime commitment.', setupFee: '₵ 1,000', minVolume: '1,000 MWh/yr' },
+    ourOffer: { tariff: 'TARIFF-GH-DC-01', rate: '₵ 0.38/kWh', validity: '1 Aug 2026 – 31 Jul 2027', type: 'Outbound', terms: 'DC fast charging outbound terms. HPC-specific SLAs, 99.5% uptime commitment.', setupFee: '₵ 1,000', minVolume: '1,000 MWh/yr' },
     messages: [
       { author: 'You', time: '18 Jun 2026 · 09:00', text: 'Please find our proposal for DC fast-charging outbound roaming. We are keen to expand into the HPC segment with Goil EV Network.' },
     ],
@@ -3780,7 +3781,7 @@ const NEGOTIATIONS: Negotiation[] = [
     direction: 'Bilateral', stage: 'Draft', priority: 'low',
     deadline: '2026-08-01', overdue: false, lastActivity: '1w ago',
     requiresAction: false,
-    ourOffer: { tariff: 'TARIFF-GH-BIL-03', rate: '₵ 0.30/kWh', validity: '1 Sep 2026 â₵" 31 Aug 2027', type: 'Bilateral', terms: 'Draft under review internally. Ghana regulatory requirements apply.', setupFee: '₵ 0', minVolume: '300 MWh/yr' },
+    ourOffer: { tariff: 'TARIFF-GH-BIL-03', rate: '₵ 0.30/kWh', validity: '1 Sep 2026 – 31 Aug 2027', type: 'Bilateral', terms: 'Draft under review internally. Ghana regulatory requirements apply.', setupFee: '₵ 0', minVolume: '300 MWh/yr' },
     messages: [],
     timeline: [
       { event: 'Draft created', time: '16 Jun 2026, 10:00', kind: 'created' },
@@ -3886,7 +3887,7 @@ function NegotiationWorkspace() {
         }
       />
 
-      {/* â"₵â"₵ Requires Action banner â"₵â"₵ */}
+      {/* ── Requires Action banner ── */}
       {requiresAction.length > 0 && (
         <div className="bg-rose-50 border border-rose-200 rounded-xl p-4">
           <div className="flex items-center gap-2 mb-3">
@@ -3920,7 +3921,7 @@ function NegotiationWorkspace() {
         </div>
       )}
 
-      {/* â"₵â"₵ Main workspace: list + detail â"₵â"₵ */}
+      {/* ── Main workspace: list + detail ── */}
       <div className="flex gap-4 items-start">
 
         {/* Left: negotiation list */}
@@ -4178,7 +4179,7 @@ function NegotiationWorkspace() {
               </div>
             )}
 
-            {/* â"₵â"₵ Comparison tab â"₵â"₵ */}
+            {/* ── Comparison tab ── */}
             {activeTab === 'comparison' && (
               <div>
                 {selected.theirOffer ? (
@@ -4237,7 +4238,7 @@ function NegotiationWorkspace() {
               </div>
             )}
 
-            {/* â"₵â"₵ Discussion tab â"₵â"₵ */}
+            {/* ── Discussion tab ── */}
             {activeTab === 'discussion' && (
               <div className="flex flex-col gap-4">
                 <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
@@ -4283,7 +4284,7 @@ function NegotiationWorkspace() {
               </div>
             )}
 
-            {/* â"₵â"₵ Timeline tab â"₵â"₵ */}
+            {/* ── Timeline tab ── */}
             {activeTab === 'timeline' && (
               <div className="space-y-0">
                 {selected.timeline.map((ev, i) => (
@@ -4453,7 +4454,7 @@ function NegotiationWorkspace() {
 
 function renderNegotiation() { return <NegotiationWorkspace />; }
 
-// â"₵â"₵ Signature Workspace â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵
+// ── Signature Workspace ────────────────────────────────────────────────────────
 const SIG_LIFECYCLE = ['Negotiation', 'Ready for Signature', 'Waiting for Signature', 'Active', 'Renewal', 'Expired'] as const;
 type SigLifecycle = typeof SIG_LIFECYCLE[number];
 
@@ -4695,7 +4696,7 @@ function SignatureWorkspace() {
       />
 
 
-      {/* â"₵â"₵ Dashboard view â"₵â"₵ */}
+      {/* ── Dashboard view ── */}
       {activeView === 'dashboard' && (
         <div className="space-y-5">
 
@@ -4862,7 +4863,7 @@ function SignatureWorkspace() {
         </div>
       )}
 
-      {/* â"₵â"₵ List view â"₵â"₵ */}
+      {/* ── List view ── */}
       {activeView === 'list' && (
         <div className="space-y-4">
           {/* Filters */}
@@ -4960,7 +4961,7 @@ function SignatureWorkspace() {
         </div>
       )}
 
-      {/* â"₵â"₵ Selected agreement detail panel â"₵â"₵ */}
+      {/* ── Selected agreement detail panel ── */}
       {selectedAgreement && (
         <div className="bg-white rounded-xl border border-indigo-200 shadow-md p-6 space-y-5">
           <div className="flex items-start justify-between">
@@ -8309,7 +8310,7 @@ function EventsWorkspace() {
   return (
     <div className="space-y-4 relative">
 
-      {/* â"₵â"₵ Header â"₵â"₵ */}
+      {/* ── Header ── */}
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <h2 className="text-xl font-bold text-slate-800">Events & CDRi</h2>
@@ -8328,7 +8329,7 @@ function EventsWorkspace() {
         </div>
       </div>
 
-      {/* â"₵â"₵ KPI Cards â"₵â"₵ */}
+      {/* ── KPI Cards ── */}
       <div className="grid grid-cols-3 gap-3">
         {[
           { label:'Active Sessions',   value:'78', sub:'Right now',         color:'text-emerald-600', bg:'bg-emerald-50 border-emerald-100', icon:Zap,             dot:true,  trend:'+12%' },
@@ -8355,7 +8356,7 @@ function EventsWorkspace() {
         ))}
       </div>
 
-      {/* â"₵â"₵ Alert Panel â"₵â"₵ */}
+      {/* ── Alert Panel ── */}
       {visibleAlerts.length > 0 && (
         <div className="space-y-2">
           <div className="flex items-center justify-between">
@@ -8386,7 +8387,7 @@ function EventsWorkspace() {
         </div>
       )}
 
-      {/* â"₵â"₵ Filters â"₵â"₵ */}
+      {/* ── Filters ── */}
       <div className="bg-white rounded-xl border border-slate-100 px-4 py-3 flex flex-wrap items-center gap-2">
         <div className="flex items-center gap-1.5 border border-slate-200 rounded-lg px-3 py-1.5 flex-1 min-w-[180px]">
           <Search className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
@@ -8418,7 +8419,7 @@ function EventsWorkspace() {
         <span className="ml-auto text-[10px] text-slate-400 flex-shrink-0">{filtSessions.length} sessions · {filtEvents.length} events</span>
       </div>
 
-      {/* â"₵â"₵ Tabbed Main Panel â"₵â"₵ */}
+      {/* ── Tabbed Main Panel ── */}
       <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
         <div className="flex items-center border-b border-slate-100 px-4 pt-0">
           {(['sessions','events','alerts'] as const).map(tab => (
@@ -8552,7 +8553,7 @@ function EventsWorkspace() {
         )}
       </div>
 
-      {/* â"₵â"₵ Bottom Analytics Row â"₵â"₵ */}
+      {/* ── Bottom Analytics Row ── */}
       <div className="grid grid-cols-1 gap-4">
 
         {/* Partner Health */}
@@ -8574,7 +8575,7 @@ function EventsWorkspace() {
         </div>
       </div>
 
-      {/* â"₵â"₵ Session Drill-down Drawer â"₵â"₵ */}
+      {/* ── Session Drill-down Drawer ── */}
       {drawerSession && drawerData && (
         <div className="fixed inset-0 z-[9999] flex justify-end" onClick={() => setDrawerSession(null)}>
           <div className="absolute inset-0 bg-black/40" />
@@ -8685,7 +8686,7 @@ function EventsWorkspace() {
         </div>
       )}
 
-      {/* â"₵â"₵ Toast â"₵â"₵ */}
+      {/* ── Toast ── */}
       {toast && (
         <div className={`fixed bottom-6 right-6 z-[99999] text-white text-xs font-semibold px-4 py-3 rounded-xl shadow-xl flex items-center gap-2.5 transition-all ${toast.type === 'error' ? 'bg-rose-600' : toast.type === 'warning' ? 'bg-amber-600' : 'bg-slate-800'}`}>
           {toast.type === 'error' ? <XCircle className="w-4 h-4" /> : toast.type === 'warning' ? <AlertCircle className="w-4 h-4 text-amber-200" /> : <CheckCircle className="w-4 h-4 text-emerald-400" />}
@@ -8767,7 +8768,7 @@ function CDRExchangeWorkspace() {
     { id:0, sev:'critical', icon:XCircle,      title:'Eichrecht signing failure',         body:'8 CDRs from Total Energies Ghana FR failed Eichrecht signing · transparency software rejected hash · manual review required', age:'31m ago' },
     { id:1, sev:'critical', icon:AlertTriangle, title:'VRA EV Charge CDRs on hold2 disputes', body:'RFID-EE9F21 and RFID-FF0012 disputed by eMSP · energy mismatch >5% · settlement blocked until resolved', age:'1h 2m ago' },
     { id:2, sev:'warning',  icon:Clock,         title:'311 CDRs pending validation',       body:'Processing queue backed up · avg wait 22 min · SLA target 15 min · CDR Processor running at 94% capacity', age:'8m ago' },
-    { id:3, sev:'warning',  icon:AlertCircle,   title:'Shell Ghana EV CDRi tariff mismatch',        body:'CDR-20250624-8803billed tariff ₵ 0.34/kWh differs from session CDRi tariff ₵ 0.29/kWh · 17% delta', age:'44m ago' },
+    { id:3, sev:'warning',  icon:AlertCircle,   title:'Shell Ghana EV CDRi tariff mismatch',        body:'CDR-20250624-8803 — billed tariff ₵ 0.34/kWh differs from session CDRi tariff ₵ 0.29/kWh · 17% delta', age:'44m ago' },
     { id:4, sev:'info',     icon:FileText,      title:'Goil EV Network CDR batch received',         body:'1,440 CDRs from Goil EV Network processed · 1,438 validated · 2 pending signature verification · Eichrecht batch signed', age:'2h ago' },
   ];
 
@@ -8866,7 +8867,7 @@ function CDRExchangeWorkspace() {
     setActionMenu(null);
   };
 
-  // â"₵â"₵ derived counts (used by the new clean design) â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵
+  // ── derived counts (used by the new clean design) ──────────────────────
   const cdrTotal     = cdrs.length;
   const cdrValidated = cdrs.filter(c => c.status === 'Validated').length;
   const cdrPending   = cdrs.filter(c => c.status === 'Processing').length;
@@ -8909,7 +8910,7 @@ function CDRExchangeWorkspace() {
   return (
     <div className="space-y-5 relative" onClick={() => actionMenu && setActionMenu(null)}>
 
-      {/* â"₵â"₵ Header â"₵â"₵ */}
+      {/* ── Header ── */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
           <h2 className="text-2xl font-bold text-slate-800 tracking-tight">CDR Exchange</h2>
@@ -8944,7 +8945,7 @@ function CDRExchangeWorkspace() {
         ))}
       </div>
 
-      {/* â"₵â"₵ Filter bar â"₵â"₵ */}
+      {/* ── Filter bar ── */}
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm px-5 py-4 flex flex-wrap items-center gap-3">
         <div className="flex items-center gap-2 border border-slate-200 rounded-xl px-3.5 py-2 flex-1 min-w-[200px] bg-slate-50 focus-within:bg-white focus-within:border-indigo-300 transition-colors">
           <Search className="w-4 h-4 text-slate-400 flex-shrink-0" />
@@ -8989,7 +8990,7 @@ function CDRExchangeWorkspace() {
         <span className="ml-auto text-xs text-slate-400 font-medium">{filteredCdrs.length} records</span>
       </div>
 
-      {/* â"₵â"₵ CDR Table â"₵â"₵ */}
+      {/* ── CDR Table ── */}
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -9099,7 +9100,7 @@ function CDRExchangeWorkspace() {
         </div>
       </div>
 
-      {/* â"₵â"₵ CDR Detail Drawer â"₵â"₵ */}
+      {/* ── CDR Detail Drawer ── */}
       {drawerCdr && cdrDrawer && (
         <div className="fixed inset-0 z-[9999] flex justify-end" onClick={() => setDrawerCdr(null)}>
           <div className="absolute inset-0 bg-black/40" />
@@ -9204,7 +9205,7 @@ function CDRExchangeWorkspace() {
         </div>
       )}
 
-      {/* â"₵â"₵ Toast â"₵â"₵ */}
+      {/* ── Toast ── */}
       {toast && (
         <div className={`fixed bottom-6 right-6 z-[99999] text-white text-sm font-semibold px-5 py-3.5 rounded-2xl shadow-2xl flex items-center gap-2.5 ${toast.type === 'error' ? 'bg-rose-600' : toast.type === 'warning' ? 'bg-amber-600' : 'bg-slate-800'}`}>
           {toast.type === 'error' ? <XCircle className="w-4 h-4" /> : toast.type === 'warning' ? <AlertCircle className="w-4 h-4 text-amber-200" /> : <CheckCircle className="w-4 h-4 text-emerald-400" />}
@@ -9413,7 +9414,7 @@ function renderCheckBill() {
   );
 }
 
-// â"₵â"₵ Disputes Dashboard â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵
+// ── Disputes Dashboard ────────────────────────────────────────────────────────
 interface DisputeRecord {
   id: string; cdr: string; partner: string; amount: number; currency: string;
   reason: string; status: 'open'|'in_review'|'awaiting_partner'|'escalated'|'resolved'|'rejected';
@@ -9578,7 +9579,7 @@ function DisputesDashboard() {
         }
       />
 
-      {/* â"₵â"₵ Health Metrics â"₵â"₵ */}
+      {/* ── Health Metrics ── */}
       <div className="grid grid-cols-4 gap-3">
         {[
           { label:'Total Disputed',       value:`₵ ${totalAmount.toFixed(2)}`,      sub:`${disputes.length} disputes`,      icon:AlertTriangle, color:'text-rose-600',    bg:'bg-rose-50 border-rose-200' },
@@ -9597,7 +9598,7 @@ function DisputesDashboard() {
         ))}
       </div>
 
-      {/* â"₵â"₵ Clickable KPI Status Cards â"₵â"₵ */}
+      {/* ── Clickable KPI Status Cards ── */}
       <div className="grid grid-cols-6 gap-2">
         {([
           ['open',             'Open',             'text-rose-600',   'bg-rose-50 border-rose-200',       'bg-rose-500'],
@@ -9623,7 +9624,7 @@ function DisputesDashboard() {
         })}
       </div>
 
-      {/* â"₵â"₵ Search + Filters â"₵â"₵ */}
+      {/* ── Search + Filters ── */}
       <div className="bg-white rounded-xl border border-slate-200 px-4 py-3 flex flex-wrap gap-3 items-center shadow-sm">
         <div className="relative flex-1 min-w-48">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -9663,7 +9664,7 @@ function DisputesDashboard() {
         </div>
       )}
 
-      {/* â"₵â"₵ Disputes Table â"₵â"₵ */}
+      {/* ── Disputes Table ── */}
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -9752,7 +9753,7 @@ function DisputesDashboard() {
         </div>
       </div>
 
-      {/* â"₵â"₵ Dispute Detail Panel â"₵â"₵ */}
+      {/* ── Dispute Detail Panel ── */}
       {selected && (
         <div ref={detailRef} className="bg-white rounded-xl border border-indigo-200 shadow-lg overflow-hidden">
           <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-100 bg-indigo-50">
@@ -9867,7 +9868,7 @@ function DisputesDashboard() {
         </div>
       )}
 
-      {/* â"₵â"₵ New Dispute Modal â"₵â"₵ */}
+      {/* ── New Dispute Modal ── */}
       {showForm && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4" style={{ background:'rgba(15,23,42,0.55)', backdropFilter:'blur(4px)' }}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden" style={{ maxHeight:'90vh' }}>
@@ -10225,10 +10226,11 @@ function MessagingSection() {
   );
 }
 
-// â"₵â"₵ Main ClientPortal Component â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵â"₵
+// ── Main ClientPortal Component ───────────────────────────────────────────────
 
 export default function ClientPortal() {
   const navigate = useNavigate();
+  usePageTitle('Client Portal · RFConnector');
   const [activeId, setActiveId] = useState<NavId>('overview');
   const [actionResult, setActionResult] = useState<ActionResult | null>(null);
   const [workspace, setWorkspace] = useState<WorkspaceView | null>(null);
@@ -10546,7 +10548,7 @@ export default function ClientPortal() {
           {workspaceGroup('Protocol configuration', <>
             {selectField('Primary protocol', 'OCPI 2.2', ['OCPI 2.2', 'eMIP 3.x', 'Custom adapter'])}
             {formField('Versions endpoint', 'https://partner.example.com/ocpi/versions')}
-            {formField('Token A / onboarding token', 'tok_live_partner_â₵¢â₵¢â₵¢â₵¢â₵¢â₵¢')}
+            {formField('Token A / onboarding token', 'tok_live_partner_••••••')}
             {selectField('Auth mode', 'Token + mTLS', ['Token', 'Token + mTLS', 'HMAC signed requests'])}
             {optionCard('Enable location sync', 'Import EVSEs, connectors, capabilities, and statuses.')}
             {optionCard('Enable tariff sync', 'Accept real-time tariff pushes from this partner.')}
@@ -10910,7 +10912,7 @@ export default function ClientPortal() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-slate-950 flex">
-      {/* â"₵â"₵ Sidebar â"₵â"₵ */}
+      {/* ── Sidebar ── */}
       <aside className="portal-sidebar w-60 bg-white dark:bg-slate-900 border-r border-gray-200 dark:border-slate-800 text-gray-700 dark:text-slate-300 flex flex-col shrink-0 fixed inset-y-0 left-0 z-10">
         {/* Logo */}
         <div className="px-5 py-5 border-b border-gray-200 dark:border-slate-800">
@@ -10995,7 +10997,7 @@ export default function ClientPortal() {
         </div>
       </aside>
 
-      {/* â"₵â"₵ Main content â"₵â"₵ */}
+      {/* ── Main content ── */}
       <div className="ml-60 flex-1 flex flex-col min-h-screen">
         {/* Top bar */}
         <header className="bg-white border-b border-slate-200 px-8 py-3 flex items-center gap-3 sticky top-0 z-10">

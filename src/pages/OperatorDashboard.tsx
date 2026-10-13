@@ -8,6 +8,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { OPERATOR_SESSION_KEY, type OperatorSession } from './DeveloperLogin.tsx';
 import { CLIENT_BASE_URL } from '../lib/hostConfig.ts';
+import { usePageTitle } from '../hooks/usePageTitle';
 import {
   Zap, LayoutDashboard, Building2, Network, CreditCard, Key,
   LogOut, Plus, Search, MoreHorizontal, CheckCircle, XCircle,
@@ -246,6 +247,7 @@ function AddVendorModal({ onClose, onAdd }: {
 
 export default function OperatorDashboard() {
   const navigate = useNavigate();
+  usePageTitle('Operator Console · RFConnector');
 
   const rawSession = sessionStorage.getItem(OPERATOR_SESSION_KEY);
   const session: OperatorSession | null = rawSession ? JSON.parse(rawSession) : null;
@@ -618,7 +620,7 @@ export default function OperatorDashboard() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-lg font-bold text-white mb-1">API Keys & Integrations</h1>
-            <p className="text-sm text-slate-500">Manage programmatic access to the ChargeBridge API</p>
+            <p className="text-sm text-slate-500">Manage programmatic access to the RFConnector API</p>
           </div>
           <button className="inline-flex items-center gap-2 rounded-xl bg-brand-600 hover:bg-brand-500 px-4 py-2 text-sm font-semibold text-white transition-colors">
             <Plus size={14} /> Generate key
@@ -700,7 +702,7 @@ export default function OperatorDashboard() {
             <Zap size={13} className="text-white" />
           </div>
           <div>
-            <p className="text-sm font-bold text-white leading-none">ChargeBridge</p>
+            <p className="text-sm font-bold text-white leading-none">RFConnector</p>
             <p className="text-[9px] text-slate-600 uppercase tracking-widest mt-0.5">Operator Console</p>
           </div>
         </div>
