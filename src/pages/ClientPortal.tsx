@@ -2174,7 +2174,7 @@ function useLiveStations() {
 
     const load = async (lat: number, lng: number) => {
       try {
-        const url = `https://api.tomtom.com/search/2/nearbySearch/.json?lat=${lat}&lon=${lng}&radius=10000&categorySet=7309&limit=20&key=${TOMTOM_KEY}`;
+        const url = tomtomUrl('nearbySearch', { lat, lon: lng, radius: 10000, categorySet: 7309, limit: 20 });
         const data = await tomtomGet<any>(url, 25_000);
         if (!data) {
           // API unavailable (quota / key): show sample data instead of an error
@@ -2547,7 +2547,7 @@ function MarketplaceWorkspace() {
     try {
       const results = await Promise.all(LIVE_CITY_SOURCES.map(async src => {
         try {
-          const url = `https://api.tomtom.com/search/2/nearbySearch/.json?lat=${src.lat}&lon=${src.lng}&radius=30000&categorySet=7309&limit=25&key=${TOMTOM_KEY}`;
+          const url = tomtomUrl('nearbySearch', { lat: src.lat, lon: src.lng, radius: 30000, categorySet: 7309, limit: 25 });
           const data = await tomtomGet<any>(url, 5 * 60_000);
           return ((data?.results ?? []) as any[]).map(item => ({ item, city: src.city, country: src.country }));
         } catch { return []; }
@@ -2563,7 +2563,7 @@ function MarketplaceWorkspace() {
     if (!unique.length) return;
     const settled = await Promise.allSettled(unique.map(async id => {
       try {
-        const url = `https://api.tomtom.com/search/2/chargingAvailability.json?key=${TOMTOM_KEY}&chargingAvailability=${encodeURIComponent(id)}`;
+        const url = tomtomUrl('chargingAvailability', { chargingAvailability: id });
         const data = await tomtomGet<any>(url, 25_000);
         if (!data) return null;
         // Sum counts across all connector types for this station
@@ -5573,7 +5573,25 @@ interface ChargingStation {
   connectors: ConnectorDetail[]; lastUpdated: string;
 }
 
-const TOMTOM_KEY = 'RyXiN45JIAuQa6tOPbsd4Ll4C8aWvDd5';
+// Production calls the Vercel proxy in /api/tomtom (key stays server-side, CDN-cached).
+// Local dev calls TomTom directly with VITE_TOMTOM_KEY from .env.local; the DEV guard
+// lets the build drop that key from production bundles.
+const TOMTOM_DEV_KEY: string = import.meta.env.DEV ? (import.meta.env.VITE_TOMTOM_KEY ?? '') : '';
+
+type TomTomEndpoint = 'nearbySearch' | 'chargingAvailability';
+const TOMTOM_DIRECT_PATH: Record<TomTomEndpoint, string> = {
+  nearbySearch: 'nearbySearch/.json',
+  chargingAvailability: 'chargingAvailability.json',
+};
+
+function tomtomUrl(endpoint: TomTomEndpoint, params: Record<string, string | number>): string {
+  const qs = new URLSearchParams(Object.entries(params).map(([k, v]) => [k, String(v)]));
+  if (import.meta.env.DEV) {
+    qs.set('key', TOMTOM_DEV_KEY);
+    return `https://api.tomtom.com/search/2/${TOMTOM_DIRECT_PATH[endpoint]}?${qs}`;
+  }
+  return `/api/tomtom/${endpoint}?${qs}`;
+}
 
 // Shared TomTom GET: caches responses for `ttlMs`, merges identical in-flight requests,
 // and caps concurrency so bursts stay under TomTom's per-second rate limit.
@@ -5955,7 +5973,7 @@ function NearbyStationsWorkspace() {
     setLocationError('');
     try {
       const radiusM = r * 1000;
-      const url = `https://api.tomtom.com/search/2/nearbySearch/.json?lat=${lat}&lon=${lng}&radius=${radiusM}&categorySet=7309&limit=50&key=${TOMTOM_KEY}`;
+      const url = tomtomUrl('nearbySearch', { lat, lon: lng, radius: radiusM, categorySet: 7309, limit: 50 });
       const data = await tomtomGet<any>(url, 25_000);
       if (!data) throw new Error('TomTom unavailable');
       const mapped = ((data.results ?? []) as any[]).map(item => buildStation(item, lat, lng));
