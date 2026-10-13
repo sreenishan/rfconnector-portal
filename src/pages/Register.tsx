@@ -467,8 +467,8 @@ export default function Register() {
 
           <p className={`text-sm ${auth.muted}`}>
             By submitting you agree to our{' '}
-            <a href="#" className={auth.link}>Terms of Service</a> and{' '}
-            <a href="#" className={auth.link}>Privacy Policy</a>.
+            <span className="font-medium text-gray-700 dark:text-slate-300">Terms of Service</span> and{' '}
+            <span className="font-medium text-gray-700 dark:text-slate-300">Privacy Policy</span>.
           </p>
 
           <button type="submit" disabled={loading} className={`${auth.primary} !py-3.5`}>
