@@ -1,5 +1,6 @@
 import { lazy, Suspense } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import ErrorBoundary from './components/ErrorBoundary.tsx';
 import { PORTAL_TYPE } from './lib/hostConfig.ts';
 import { CLIENT_SESSION_KEY } from './pages/ClientLogin.tsx';
 import { OPERATOR_SESSION_KEY } from './pages/DeveloperLogin.tsx';
@@ -16,6 +17,16 @@ const OperatorDashboard = lazy(() => import('./pages/OperatorDashboard.tsx'));
 
 function PageFallback() {
   return <div className="min-h-screen bg-gray-50 dark:bg-slate-950" aria-busy="true" />;
+}
+
+// Catches render errors on any route; navigating to another route clears the error.
+function RouteBoundary({ children }: { children: React.ReactNode }) {
+  const { pathname } = useLocation();
+  return (
+    <ErrorBoundary resetKey={pathname}>
+      <Suspense fallback={<PageFallback />}>{children}</Suspense>
+    </ErrorBoundary>
+  );
 }
 
 // ── Auth guards ───────────────────────────────────────────────────────────────
@@ -58,7 +69,7 @@ function RequireClientAuth({ children }: { children: React.ReactNode }) {
 function ClientPortalApp() {
   return (
     <BrowserRouter>
-      <Suspense fallback={<PageFallback />}>
+      <RouteBoundary>
       <Routes>
         <Route path="/login" element={<ClientLogin />} />
         <Route
@@ -72,7 +83,7 @@ function ClientPortalApp() {
         {/* Catch-all → root (guarded, so unauthenticated → /login) */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-      </Suspense>
+      </RouteBoundary>
     </BrowserRouter>
   );
 }
@@ -88,7 +99,7 @@ function ClientPortalApp() {
 function OperatorDashboardApp() {
   return (
     <BrowserRouter>
-      <Suspense fallback={<PageFallback />}>
+      <RouteBoundary>
       <Routes>
         <Route path="/"          element={<Home />} />
         <Route path="/register"  element={<Register />} />
@@ -107,7 +118,7 @@ function OperatorDashboardApp() {
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-      </Suspense>
+      </RouteBoundary>
     </BrowserRouter>
   );
 }

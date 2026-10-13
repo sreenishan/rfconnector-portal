@@ -9,6 +9,7 @@
  */
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { usePageTitle } from '../hooks/usePageTitle';
+import ErrorBoundary from '../components/ErrorBoundary.tsx';
 import { fetchDashboardKPIs, fetchMarketplaceNetworks, fetchDisputes, fetchInvoices, fetchHubjectNetworks, VOLTA_TENANT_ID, type DashboardKPIs, type DbNetwork, type DbDispute, type DbInvoice, type HubjectNetworkSummary } from '../lib/supabase';
 import { useTheme } from '../hooks/useTheme';
 import { useLocalStorage } from '../hooks/useLocalStorage';
@@ -23,7 +24,7 @@ import {
   CheckCircle, XCircle, Clock, Zap, TrendingUp,
   MapPin, Wifi, WifiOff, Bell, Settings, LogOut,
   ArrowUpRight, ArrowDownRight, MoreHorizontal,
-  Eye, Send, Star, Bolt, Users, Network, X,
+  Eye, Send, Star, Bolt, Users, Network, X, Menu as MenuIcon,
   BatteryCharging, Cpu, BarChart2, Lock, Plug,
   PieChart, TableProperties, CalendarRange, Sun, Moon,
   ArrowRight, Inbox, GitMerge, ThumbsUp, ThumbsDown,
@@ -977,9 +978,12 @@ function CompanyWorkspace() {
     { id:'AGR-EU-2025-007', partner:'GreenMobility GH',       status:'expiring',  type:'Bilateral',   expires:'05 Jul 2026', amount:'₵ 3,100/mo'  },
   ];
 
-  const TOP_NETWORK_NAMES = ['ECG (Electricity Co. Ghana)', 'VRA EV Charge', 'Goil EV Network', 'Shell Ghana EV'];
-  const networks = TOP_NETWORK_NAMES
-    .map(name => { const n = MARKETPLACE_NETWORKS.find(x => x.name === name)!; return { name: n.name, country: n.country, evses: n.evses, avail: n.availability, latency: parseInt(n.latency) || 0, connectors: n.evseAvailable + n.evseCharging + n.evseInoperative }; });
+  // Must match names in MARKETPLACE_NETWORKS; unknown names are skipped rather than crashing the page.
+  const TOP_NETWORK_NAMES = ['ECG Ghana', 'Total Energies Ghana', 'Goil EV Network', 'GreenMobility GH'];
+  const networks = TOP_NETWORK_NAMES.flatMap(name => {
+    const n = MARKETPLACE_NETWORKS.find(x => x.name === name);
+    return n ? [{ name: n.name, country: n.country, evses: n.evses, avail: n.availability, latency: parseInt(n.latency) || 0, connectors: n.evseAvailable + n.evseCharging + n.evseInoperative }] : [];
+  });
 
   const users = [
     { name:'Emma de Vries',  initials:'EV', role:'Super Admin', email:'emma@volta-networks.gh',    lastLogin:'Today 14:22',  status:'Active',   mfa:true  },
@@ -2440,7 +2444,7 @@ function RegionalEVMap({ accessPoints, selectedNetwork, selectedAccessPoint, onS
   const liveCount = displayAPs.filter(ap => ap.tariff === 'LIVE').length;
 
   return (
-    <div className="relative rounded-xl overflow-hidden border border-slate-200 shadow-sm" style={{ height: 340 }}>
+    <div className="relative isolate rounded-xl overflow-hidden border border-slate-200 shadow-sm" style={{ height: 340 }}>
       <div ref={containerRef} style={{ height: '100%', width: '100%' }} />
       {/* Legend overlay */}
       <div className="absolute bottom-3 left-3 z-[500] bg-white/95 backdrop-blur rounded-lg px-3 py-2 shadow-sm flex items-center gap-4">
@@ -3041,7 +3045,7 @@ function MarketplaceWorkspace() {
 
           {/* Searchable network list */}
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col" style={{ minHeight:280 }}>
-            <div className="px-4 py-3 border-b border-slate-100 flex items-center gap-2">
+            <div className="px-4 py-3 border-b border-slate-100 flex flex-wrap items-center gap-2">
               <Network className="w-4 h-4 text-slate-400" />
               <span className="text-sm font-semibold text-slate-700">Networks</span>
               <span className="text-xs text-slate-400 ml-1">({filteredNetworks.length})</span>
@@ -3261,13 +3265,13 @@ function MarketplaceWorkspace() {
           <h3 className="font-semibold text-slate-700 text-sm">Network Lifecycle Funnel</h3>
           <span className="text-xs text-slate-400 ml-1">-- New Connection → Negotiating → Active Agreement</span>
         </div>
-        <div className="flex items-center gap-0">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-0">
           {[
             { stage:'New Connection',  count:discNets, sub:`${discNets * 130} EVSEs potential`,     color:'bg-slate-100 border-slate-200', text:'text-slate-700', bar:'bg-slate-400' },
             { stage:'Negotiating', count:negNets,  sub:'In agreement pipeline',                 color:'bg-amber-50 border-amber-200',  text:'text-amber-800', bar:'bg-amber-500' },
             { stage:'Active',      count:activeNets, sub:`${networks.filter(n=>n.status==='Active').reduce((s,n)=>s+n.evses,0).toLocaleString()} EVSEs live`, color:'bg-emerald-50 border-emerald-200', text:'text-emerald-800', bar:'bg-emerald-500' },
           ].map(({ stage, count, sub, color, text, bar }, idx, arr) => (
-            <div key={stage} className="flex items-center flex-1">
+            <div key={stage} className="flex flex-col sm:flex-row items-stretch sm:items-center flex-1 min-w-0">
               <button data-local=""
                 onClick={() => toggleKpi(stage)}
                 className={`flex-1 rounded-xl border px-4 py-3 text-left transition-all hover:shadow-md focus:outline-none ${color} ${activeKpi === stage ? 'ring-2 ring-indigo-400' : ''}`}
@@ -3282,8 +3286,8 @@ function MarketplaceWorkspace() {
                 <p className="text-[10px] text-slate-400 mt-1.5">{sub}</p>
               </button>
               {idx < arr.length - 1 && (
-                <div className="flex flex-col items-center px-2 flex-shrink-0">
-                  <ChevronRight className="w-5 h-5 text-slate-300" />
+                <div className="flex sm:flex-col items-center justify-center gap-1 sm:gap-0 px-2 py-1 sm:py-0 flex-shrink-0">
+                  <ChevronRight className="w-5 h-5 text-slate-300 rotate-90 sm:rotate-0" />
                   <span className="text-[8px] text-slate-300 font-medium mt-0.5">{idx === 0 ? 'outreach' : 'signed'}</span>
                 </div>
               )}
@@ -4635,7 +4639,7 @@ function SignatureWorkspace() {
           </div>
         </div>
         {!compact && (
-          <div className="flex items-center gap-3 mb-2">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-2">
             <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${dirPill[a.direction]}`}>{a.direction}</span>
             <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-slate-100 text-slate-600">{a.type}</span>
             {a.amendmentRequired && <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-orange-100 text-orange-700">Amendment needed</span>}
@@ -4764,7 +4768,7 @@ function SignatureWorkspace() {
                     role="button" tabIndex={0}
                     onClick={() => { const opening = selectedId !== a.id; setSelectedId(opening ? a.id : null); if (opening) scrollToDetail(); }}
                     onKeyDown={e => { if (e.key === 'Enter') { const opening = selectedId !== a.id; setSelectedId(opening ? a.id : null); if (opening) scrollToDetail(); } }}
-                    className={`w-full text-left bg-white rounded-lg border p-4 flex items-center gap-4 hover:border-blue-300 hover:shadow-sm transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-300 ${selectedId === a.id ? 'border-blue-400 shadow-sm' : 'border-blue-100'}`}
+                    className={`w-full text-left bg-white rounded-lg border p-4 flex flex-wrap sm:flex-nowrap items-center gap-4 hover:border-blue-300 hover:shadow-sm transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-300 ${selectedId === a.id ? 'border-blue-400 shadow-sm' : 'border-blue-100'}`}
                     aria-label={`Track agreement ${a.id} sent to ${a.partner}`}
                   >
                     <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center font-bold text-blue-700 text-sm flex-shrink-0">{a.partner[0]}</div>
@@ -7208,7 +7212,7 @@ function FastnedMap({ locations, tariffMap, onSelect, highlighted, latLngJump }:
   }, [locations, tariffMap, highlighted]);
 
   return (
-    <div className="relative rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700" style={{ height: 520 }}>
+    <div className="relative isolate rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700" style={{ height: 520 }}>
       <div ref={containerRef} className="w-full h-full" />
       {/* Legend */}
       <div className="absolute bottom-3 right-3 z-[1000] bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 px-3 py-2 shadow-lg">
@@ -7723,7 +7727,7 @@ function EVSERepoView() {
 
       {/* Location table */}
       <div className="bg-white rounded-xl border border-slate-100 shadow-sm">
-        <div className="flex items-center gap-3 px-5 py-4 border-b border-slate-100">
+        <div className="flex flex-wrap items-center gap-3 px-5 py-4 border-b border-slate-100">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input
@@ -8973,7 +8977,7 @@ function CDRExchangeWorkspace() {
             <option key={s} value={s}>{s === 'All' ? 'All Statuses' : s}</option>
           )}
         </select>
-        <div className="flex items-center gap-2 text-sm text-slate-500">
+        <div className="flex flex-wrap items-center gap-2 text-sm text-slate-500">
           <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
             className="border border-slate-200 rounded-xl text-sm px-3 py-2 text-slate-600 bg-white focus:outline-none focus:border-indigo-300 hover:border-slate-300 transition-colors" />
           <span className="text-slate-300">→</span>
@@ -9312,7 +9316,7 @@ function renderTracking() {
 
       {/* By partner summary */}
       <div className="bg-white rounded-xl border border-slate-100 shadow-sm">
-        <div className="flex items-center gap-3 px-5 py-4 border-b border-slate-100">
+        <div className="flex flex-wrap items-center gap-3 px-5 py-4 border-b border-slate-100">
           <h3 className="font-semibold text-slate-700 flex-1">CDR Aggregation by Partner (June 2025)</h3>
           <select className="border border-slate-200 rounded-lg text-sm px-3 py-2">
             <option>June 2025</option><option>May 2025</option><option>Q1 2025</option>
@@ -9332,7 +9336,7 @@ function renderTracking() {
 
       {/* Session detail drill-down */}
       <div className="bg-white rounded-xl border border-slate-100 shadow-sm">
-        <div className="flex items-center gap-3 px-5 py-4 border-b border-slate-100">
+        <div className="flex flex-wrap items-center gap-3 px-5 py-4 border-b border-slate-100">
           <h3 className="font-semibold text-slate-700 flex-1">Session Details</h3>
           <SearchBar placeholder="Search CDR ID..." />
           <button className="flex items-center gap-1 text-sm text-slate-700 border border-slate-200 px-3 py-2 rounded-lg">
@@ -10044,7 +10048,7 @@ function InvoicingWorkspace() {
 
       {/* Invoice list */}
       <div className="bg-white rounded-xl border border-slate-100 shadow-sm">
-        <div className="flex items-center gap-3 px-5 py-4 border-b border-slate-100">
+        <div className="flex flex-wrap items-center gap-3 px-5 py-4 border-b border-slate-100">
           <h3 className="font-semibold text-slate-700 flex-1">
             Invoices
             {periodFilter !== 'All Periods' && (
@@ -10150,9 +10154,9 @@ function MessagingSection() {
     <div className="space-y-0">
       <SectionHeader title="Messaging" sub="Instant messaging with roaming partners and RFConnector support" />
 
-      <div className="flex gap-4 h-[520px]">
-        {/* Thread list */}
-        <div className="w-72 bg-white rounded-xl border border-slate-100 shadow-sm overflow-y-auto flex-shrink-0">
+      <div className="flex flex-col md:flex-row gap-4 md:h-[520px]">
+        {/* Thread list — stacks above the conversation below md */}
+        <div className="w-full md:w-72 max-h-64 md:max-h-none bg-white rounded-xl border border-slate-100 shadow-sm overflow-y-auto flex-shrink-0">
           <div className="p-3 border-b border-slate-100">
             <SearchBar placeholder="Search threads..." />
           </div>
@@ -10181,7 +10185,7 @@ function MessagingSection() {
         </div>
 
         {/* Message pane */}
-        <div className="flex-1 bg-white rounded-xl border border-slate-100 shadow-sm flex flex-col">
+        <div className="flex-1 min-w-0 min-h-[420px] md:min-h-0 bg-white rounded-xl border border-slate-100 shadow-sm flex flex-col">
           <div className="px-5 py-4 border-b border-slate-100">
             <div className="font-semibold text-slate-800">{active.partner}</div>
             <div className="text-sm text-slate-500">{active.subject}</div>
@@ -10250,6 +10254,14 @@ export default function ClientPortal() {
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(
     new Set(['Business', 'Roaming', 'Data', 'Clearing'])
   );
+  // Below lg the sidebar is an off-canvas drawer.
+  const [navOpen, setNavOpen] = useState(false);
+  useEffect(() => {
+    if (!navOpen) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setNavOpen(false); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [navOpen]);
 
   function handleSignOut() {
     sessionStorage.removeItem(CLIENT_SESSION_KEY);
@@ -10287,6 +10299,7 @@ export default function ClientPortal() {
   function selectSection(id: NavId): void {
     setActiveId(id);
     setWorkspace(null);
+    setNavOpen(false);
   }
 
   function showResult(title: string, detail: string, tone: ActionResult['tone'] = 'info'): void {
@@ -10912,8 +10925,17 @@ export default function ClientPortal() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-slate-950 flex">
+      {navOpen && (
+        <div className="fixed inset-0 z-30 bg-black/40 backdrop-blur-[1px] lg:hidden" aria-hidden="true" onClick={() => setNavOpen(false)} />
+      )}
       {/* ── Sidebar ── */}
-      <aside className="portal-sidebar w-60 bg-white dark:bg-slate-900 border-r border-gray-200 dark:border-slate-800 text-gray-700 dark:text-slate-300 flex flex-col shrink-0 fixed inset-y-0 left-0 z-10">
+      <aside
+        id="portal-sidebar"
+        aria-label="Client portal navigation"
+        className={`portal-sidebar w-60 bg-white dark:bg-slate-900 border-r border-gray-200 dark:border-slate-800 text-gray-700 dark:text-slate-300 flex flex-col shrink-0 fixed inset-y-0 left-0 z-40 lg:z-10 transition-transform duration-200 motion-reduce:transition-none lg:translate-x-0 ${
+          navOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'
+        }`}
+      >
         {/* Logo */}
         <div className="px-5 py-5 border-b border-gray-200 dark:border-slate-800">
           <div className="flex items-center gap-2">
@@ -10998,14 +11020,24 @@ export default function ClientPortal() {
       </aside>
 
       {/* ── Main content ── */}
-      <div className="ml-60 flex-1 flex flex-col min-h-screen">
+      <div className="lg:ml-60 flex-1 flex flex-col min-h-screen min-w-0">
         {/* Top bar */}
-        <header className="bg-white border-b border-slate-200 px-8 py-3 flex items-center gap-3 sticky top-0 z-10">
-          <div className="flex-1">
-            <span className="text-xs text-slate-400">
+        <header className="bg-white border-b border-slate-200 px-4 sm:px-6 lg:px-8 py-3 flex items-center gap-3 sticky top-0 z-20">
+          <button
+            type="button"
+            onClick={() => setNavOpen(true)}
+            aria-label="Open navigation"
+            aria-expanded={navOpen}
+            aria-controls="portal-sidebar"
+            className="lg:hidden -ml-1 inline-flex h-10 w-10 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-800 dark:hover:bg-slate-800 dark:hover:text-white"
+          >
+            <MenuIcon className="w-5 h-5" />
+          </button>
+          <div className="flex-1 min-w-0">
+            <span className="text-sm font-medium text-slate-700 dark:text-slate-200 lg:text-xs lg:font-normal lg:text-slate-400">
               {NAV_GROUPS.flatMap(g => g.items).find(i => i.id === activeId)?.label}
             </span>
-            <span className="ml-3 text-xs text-slate-500 font-medium">
+            <span className="hidden sm:inline ml-3 text-xs text-slate-500 font-medium">
               Last Synced:{' '}
               {lastSync.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })},{' '}
               {lastSync.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -11026,6 +11058,7 @@ export default function ClientPortal() {
                 selectSection('supervision');
                 showResult('Notifications opened', 'Showing supervision alerts and partner connectivity status.', 'info');
               }}
+              aria-label="Notifications (new alerts)"
               className="relative p-2 text-slate-500 hover:text-slate-700"
             >
               <Bell className="w-5 h-5" />
@@ -11039,13 +11072,15 @@ export default function ClientPortal() {
               <div className="w-7 h-7 rounded-full bg-indigo-100 text-indigo-700 font-bold text-xs flex items-center justify-center">
                 {(clientSession?.company ?? 'A').charAt(0)}
               </div>
-              <span className="text-sm text-slate-600 font-medium">Allego Admin</span>
+              <span className="hidden sm:inline text-sm text-slate-600 font-medium max-w-[10rem] truncate">
+                {clientSession?.company ?? 'Account'}
+              </span>
             </button>
           </div>
         </header>
 
         {actionResult !== null && (
-          <div className={`mx-8 mt-5 rounded-xl border px-4 py-3 flex items-start gap-3 ${
+          <div className={`mx-4 sm:mx-6 lg:mx-8 mt-5 rounded-xl border px-4 py-3 flex items-start gap-3 ${
             actionResult.tone === 'success'
               ? 'border-emerald-200 bg-emerald-50 text-emerald-900'
               : actionResult.tone === 'warning'
@@ -11084,11 +11119,13 @@ export default function ClientPortal() {
         {/* Page content */}
         <main
           onClickCapture={workspace === null ? handleContentClick : undefined}
-          className="flex-1 p-8 max-w-6xl w-full mx-auto"
+          className="flex-1 p-4 sm:p-6 lg:p-8 max-w-6xl w-full mx-auto min-w-0 max-md:overflow-x-auto"
         >
-          {workspace === null
-            ? <div key={activeId}>{renderSection()}</div>
-            : renderWorkspace()}
+          <ErrorBoundary inline resetKey={`${activeId}:${String(workspace)}`}>
+            {workspace === null
+              ? <div key={activeId}>{renderSection()}</div>
+              : renderWorkspace()}
+          </ErrorBoundary>
         </main>
       </div>
     </div>
