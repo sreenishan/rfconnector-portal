@@ -2175,13 +2175,12 @@ function useLiveStations() {
     const load = async (lat: number, lng: number) => {
       try {
         const url = `https://api.tomtom.com/search/2/nearbySearch/.json?lat=${lat}&lon=${lng}&radius=10000&categorySet=7309&limit=20&key=${TOMTOM_KEY}`;
-        const res = await fetch(url);
-        if (!res.ok) {
+        const data = await tomtomGet<any>(url, 25_000);
+        if (!data) {
           // API unavailable (quota / key): show sample data instead of an error
           if (!cancelled) { setStations(buildFallbackStations()); setIsDemo(true); setUpdatedAt(new Date()); }
           return;
         }
-        const data: any = await res.json();
         if (cancelled) return;
         const mapped: ChargingStation[] = ((data.results ?? []) as any[]).map((item: any) => {
           const id    = item.id ?? String(Math.random());
@@ -2222,7 +2221,7 @@ function useLiveStations() {
 
     const start = (lat: number, lng: number) => {
       load(lat, lng);
-      timer = setInterval(() => load(lat, lng), 30000);
+      timer = setInterval(() => { if (pageIsVisible()) load(lat, lng); }, 30000);
     };
 
     // Always use Berlin — portal context is Germany (matches Marketplace + TomTom layer)
@@ -2549,10 +2548,8 @@ function MarketplaceWorkspace() {
       const results = await Promise.all(LIVE_CITY_SOURCES.map(async src => {
         try {
           const url = `https://api.tomtom.com/search/2/nearbySearch/.json?lat=${src.lat}&lon=${src.lng}&radius=30000&categorySet=7309&limit=25&key=${TOMTOM_KEY}`;
-          const res = await fetch(url);
-          if (!res.ok) return [];
-          const data: any = await res.json();
-          return ((data.results ?? []) as any[]).map(item => ({ item, city: src.city, country: src.country }));
+          const data = await tomtomGet<any>(url, 5 * 60_000);
+          return ((data?.results ?? []) as any[]).map(item => ({ item, city: src.city, country: src.country }));
         } catch { return []; }
       }));
       setLiveRaw(results.flat());
@@ -2567,9 +2564,8 @@ function MarketplaceWorkspace() {
     const settled = await Promise.allSettled(unique.map(async id => {
       try {
         const url = `https://api.tomtom.com/search/2/chargingAvailability.json?key=${TOMTOM_KEY}&chargingAvailability=${encodeURIComponent(id)}`;
-        const res = await fetch(url);
-        if (!res.ok) return null;
-        const data = await res.json();
+        const data = await tomtomGet<any>(url, 25_000);
+        if (!data) return null;
         // Sum counts across all connector types for this station
         const totals = (data.connectors ?? []).reduce(
           (acc: AvailCounts, c: any) => ({
@@ -2596,7 +2592,7 @@ function MarketplaceWorkspace() {
   useEffect(() => {
     fetchLiveStations();
     // Refresh full station list every 5 minutes (static info rarely changes)
-    const t = setInterval(fetchLiveStations, 300_000);
+    const t = setInterval(() => { if (pageIsVisible()) fetchLiveStations(); }, 300_000);
     return () => clearInterval(t);
   }, [fetchLiveStations]);
 
@@ -2606,7 +2602,7 @@ function MarketplaceWorkspace() {
     if (!liveRaw.length) return;
     const ids = liveRaw.map(({ item }) => item.id).filter(Boolean) as string[];
     fetchAvailability(ids);
-    const t = setInterval(() => fetchAvailability(ids), 30_000);
+    const t = setInterval(() => { if (pageIsVisible()) fetchAvailability(ids); }, 30_000);
     return () => clearInterval(t);
   }, [liveRaw, fetchAvailability]);
 
@@ -5579,6 +5575,65 @@ interface ChargingStation {
 
 const TOMTOM_KEY = 'RyXiN45JIAuQa6tOPbsd4Ll4C8aWvDd5';
 
+// Shared TomTom GET: caches responses for `ttlMs`, merges identical in-flight requests,
+// and caps concurrency so bursts stay under TomTom's per-second rate limit.
+// On 429/5xx/network errors it returns the last cached response (or null).
+const TOMTOM_MAX_CONCURRENT = 4;
+const TOMTOM_MIN_GAP_MS = 160;          // ≤ ~6 request starts per second (TomTom QPS limit)
+const TOMTOM_RETRY_AFTER_MS = 1000;     // one retry when TomTom answers 429
+const tomtomCache = new Map<string, { at: number; data: unknown }>();
+const tomtomInflight = new Map<string, Promise<unknown>>();
+const tomtomQueue: (() => void)[] = [];
+let tomtomActive = 0;
+let tomtomNextStart = 0;
+
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+async function tomtomAcquire(): Promise<void> {
+  if (tomtomActive < TOMTOM_MAX_CONCURRENT) tomtomActive++;
+  else await new Promise<void>(resolve => tomtomQueue.push(() => { tomtomActive++; resolve(); }));
+  const now = Date.now();
+  const startAt = Math.max(now, tomtomNextStart);
+  tomtomNextStart = startAt + TOMTOM_MIN_GAP_MS;
+  if (startAt > now) await sleep(startAt - now);
+}
+
+function tomtomRelease(): void {
+  tomtomActive--;
+  tomtomQueue.shift()?.();
+}
+
+function tomtomGet<T>(url: string, ttlMs: number): Promise<T | null> {
+  const cached = tomtomCache.get(url);
+  if (cached && Date.now() - cached.at < ttlMs) return Promise.resolve(cached.data as T);
+  const pending = tomtomInflight.get(url);
+  if (pending) return pending as Promise<T | null>;
+
+  const request = (async (): Promise<T | null> => {
+    await tomtomAcquire();
+    try {
+      let res = await fetch(url);
+      if (res.status === 429) {
+        await sleep(TOMTOM_RETRY_AFTER_MS);
+        res = await fetch(url);
+      }
+      if (!res.ok) return (cached?.data as T) ?? null;
+      const data = await res.json() as T;
+      tomtomCache.set(url, { at: Date.now(), data });
+      return data;
+    } catch {
+      return (cached?.data as T) ?? null;
+    } finally {
+      tomtomRelease();
+      tomtomInflight.delete(url);
+    }
+  })();
+  tomtomInflight.set(url, request);
+  return request;
+}
+
+const pageIsVisible = () => typeof document === 'undefined' || document.visibilityState === 'visible';
+
 /* ─────────────────────────────────────────────────────────────────────────
  * RF Connector — Provider-Agnostic Marketplace Architecture
  *
@@ -5901,9 +5956,8 @@ function NearbyStationsWorkspace() {
     try {
       const radiusM = r * 1000;
       const url = `https://api.tomtom.com/search/2/nearbySearch/.json?lat=${lat}&lon=${lng}&radius=${radiusM}&categorySet=7309&limit=50&key=${TOMTOM_KEY}`;
-      const res = await fetch(url);
-      if (!res.ok) throw new Error(`TomTom ${res.status}`);
-      const data: any = await res.json();
+      const data = await tomtomGet<any>(url, 25_000);
+      if (!data) throw new Error('TomTom unavailable');
       const mapped = ((data.results ?? []) as any[]).map(item => buildStation(item, lat, lng));
       setStations(mapped);
       setLastRefresh(new Date());
