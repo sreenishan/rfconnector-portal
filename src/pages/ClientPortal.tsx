@@ -361,10 +361,12 @@ const Table = ({ cols, rows }: { cols: string[]; rows: React.ReactNode[][] }) =>
 );
 
 const SearchBar = ({ placeholder }: { placeholder?: string }) => (
-  <div className="relative">
-    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+  <div className="relative max-w-full">
+    <Search aria-hidden="true" className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
     <input
-      className="pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-sm w-64 focus:outline-none focus:ring-2 focus:ring-indigo-300"
+      type="search"
+      aria-label={(placeholder ?? 'Search').replace(/\.{3}$|…$/, '')}
+      className="pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-sm w-64 max-w-full focus:outline-none focus:ring-2 focus:ring-indigo-300"
       placeholder={placeholder ?? 'Search...'}
     />
   </div>
@@ -1475,7 +1477,7 @@ function CompanyWorkspace() {
                 </td>
                 <td className="py-3 px-4 text-slate-400">{u.lastLogin}</td>
                 <td className="py-3 px-2">
-                  <button data-local onClick={()=>showToast(`Managing ${u.name}`)} className="text-slate-300 hover:text-slate-600">
+                  <button data-local onClick={()=>showToast(`Managing ${u.name}`)} aria-label={`Manage ${u.name}`} className="text-slate-300 hover:text-slate-600">
                     <MoreHorizontal className="w-4 h-4"/>
                   </button>
                 </td>
@@ -2920,25 +2922,27 @@ function MarketplaceWorkspace() {
       {/* ── Global search + filters ── */}
       <div className="bg-white rounded-xl border border-slate-200 px-4 py-3 flex flex-wrap gap-3 items-center shadow-sm">
         <div className="relative flex-1 min-w-48">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <Search aria-hidden="true" className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input
+            type="search"
+            aria-label="Search networks, stations, EVSE IDs, cities and protocols"
             value={search} onChange={e => setSearch(e.target.value)}
             className="pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-sm w-full bg-white text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-300"
             placeholder="Search networks, stations, EVSE IDs, cities, protocols..."
           />
           {search && (
-            <button data-local="" onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+            <button data-local="" onClick={() => setSearch('')} aria-label="Clear search" className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
               <X className="w-3.5 h-3.5" />
             </button>
           )}
         </div>
         {[
-          { value: roleFilter,     onChange: setRoleFilter,     opts: ['All Roles','CPO','eMSP'] },
-          { value: countryFilter,  onChange: setCountryFilter,  opts: ['All Countries','DE'] },
-          { value: protocolFilter, onChange: setProtocolFilter, opts: ['All Protocols','OCPI 2.2','eMIP 3.x'] },
-          { value: statusFilter,   onChange: setStatusFilter,   opts: ['All Statuses','Active','Negotiating','New Connection'] },
-        ].map(({ value, onChange, opts }) => (
-          <select key={opts[0]} data-local="" value={value} onChange={e => { onChange(e.target.value); setActiveKpi(null); }}
+          { label: 'role',     value: roleFilter,     onChange: setRoleFilter,     opts: ['All Roles','CPO','eMSP'] },
+          { label: 'country',  value: countryFilter,  onChange: setCountryFilter,  opts: ['All Countries','DE'] },
+          { label: 'protocol', value: protocolFilter, onChange: setProtocolFilter, opts: ['All Protocols','OCPI 2.2','eMIP 3.x'] },
+          { label: 'status',   value: statusFilter,   onChange: setStatusFilter,   opts: ['All Statuses','Active','Negotiating','New Connection'] },
+        ].map(({ label, value, onChange, opts }) => (
+          <select key={opts[0]} data-local="" aria-label={`Filter by ${label}`} value={value} onChange={e => { onChange(e.target.value); setActiveKpi(null); }}
             className="border border-slate-200 rounded-lg text-sm px-3 py-2 text-slate-600 bg-white focus:outline-none">
             {opts.map(o => <option key={o}>{o}</option>)}
           </select>
@@ -5254,7 +5258,7 @@ function APIKeysWorkspace() {
                     <code className="text-xs font-mono bg-slate-50 border border-slate-200 rounded px-2 py-1 text-slate-700 tracking-wide">
                       {revealed.has(k.id) ? k.key : maskKey(k.key)}
                     </code>
-                    <button data-local onClick={() => toggleReveal(k.id)} className="text-slate-400 hover:text-slate-700 p-1 rounded">
+                    <button data-local onClick={() => toggleReveal(k.id)} aria-label={revealed.has(k.id) ? 'Hide key' : 'Show key'} className="text-slate-400 hover:text-slate-700 p-1 rounded">
                       <Eye className="w-3.5 h-3.5" />
                     </button>
                     <button data-local onClick={() => copyKey(k.key, k.id)} className={`p-1 rounded transition-colors ${copied === k.id ? 'text-emerald-600' : 'text-slate-400 hover:text-slate-700'}`}>
@@ -7801,15 +7805,18 @@ function EVSERepoView() {
       <div className="bg-white rounded-xl border border-slate-100 shadow-sm">
         <div className="flex flex-wrap items-center gap-3 px-5 py-4 border-b border-slate-100">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <Search aria-hidden="true" className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input
+              type="search"
+              aria-label="Search locations"
               value={search}
               onChange={e => setSearch(e.target.value)}
-              className="pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-sm text-slate-900 placeholder:text-slate-400 w-64 focus:outline-none focus:ring-2 focus:ring-indigo-300"
+              className="pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-sm text-slate-900 placeholder:text-slate-400 w-64 max-w-full focus:outline-none focus:ring-2 focus:ring-indigo-300"
               placeholder="Search locations..."
             />
           </div>
           <select
+            aria-label="Filter by country"
             value={country}
             onChange={e => setCountry(e.target.value)}
             className="border border-slate-200 rounded-lg text-sm px-3 py-2 text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300"
@@ -8062,18 +8069,18 @@ function TariffsView() {
       {/* Cost calculator */}
       <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-6">
         <h3 className="font-semibold text-slate-700 mb-4">Tariff Cost Calculator</h3>
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1">Energy Consumed (kWh)</label>
-            <input type="number" defaultValue="25" className="w-full border border-slate-200 rounded-lg text-sm px-3 py-2 text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300" />
+            <label htmlFor="calc-energy" className="block text-xs font-medium text-slate-500 mb-1">Energy Consumed (kWh)</label>
+            <input id="calc-energy" type="number" defaultValue="25" className="w-full border border-slate-200 rounded-lg text-sm px-3 py-2 text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1">Duration (minutes)</label>
-            <input type="number" defaultValue="45" className="w-full border border-slate-200 rounded-lg text-sm px-3 py-2 text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300" />
+            <label htmlFor="calc-duration" className="block text-xs font-medium text-slate-500 mb-1">Duration (minutes)</label>
+            <input id="calc-duration" type="number" defaultValue="45" className="w-full border border-slate-200 rounded-lg text-sm px-3 py-2 text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1">Tariff</label>
-            <select className="w-full border border-slate-200 rounded-lg text-sm px-3 py-2 text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300">
+            <label htmlFor="calc-tariff" className="block text-xs font-medium text-slate-500 mb-1">Tariff</label>
+            <select id="calc-tariff" className="w-full border border-slate-200 rounded-lg text-sm px-3 py-2 text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300">
               {tariffs.filter(t=>t.status==='Active').map(t => <option key={t.code}>{t.code}</option>)}
             </select>
           </div>
@@ -8466,23 +8473,23 @@ function EventsWorkspace() {
       {/* ── Filters ── */}
       <div className="bg-white rounded-xl border border-slate-100 px-4 py-3 flex flex-wrap items-center gap-2">
         <div className="flex items-center gap-1.5 border border-slate-200 rounded-lg px-3 py-1.5 flex-1 min-w-[180px]">
-          <Search className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
-          <input value={search} onChange={e => setSearch(e.target.value)}
+          <Search aria-hidden="true" className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
+          <input type="search" aria-label="Search by session ID, partner or token" value={search} onChange={e => setSearch(e.target.value)}
             placeholder="Session ID, partner, token..."
             className="text-xs outline-none bg-transparent text-slate-700 placeholder-slate-400 w-full" />
-          {search && <button data-local onClick={() => setSearch('')}><X className="w-3 h-3 text-slate-400 hover:text-slate-600" /></button>}
+          {search && <button data-local onClick={() => setSearch('')} aria-label="Clear search"><X className="w-3 h-3 text-slate-400 hover:text-slate-600" /></button>}
         </div>
         {([
-          { val:partnerFilter, set:setPartnerFilter, opts:partners,  label:'Partner'    },
-          { val:countryFilter, set:setCountryFilter, opts:countries, label:'Country'    },
-          { val:statusFilter,  set:setStatusFilter,  opts:statuses,  label:'Status'     },
+          { val:partnerFilter, set:setPartnerFilter, opts:partners,  label:'Partner', plural:'Partners'  },
+          { val:countryFilter, set:setCountryFilter, opts:countries, label:'Country', plural:'Countries' },
+          { val:statusFilter,  set:setStatusFilter,  opts:statuses,  label:'Status',  plural:'Statuses'  },
         ] as const).map(f => (
-          <select key={f.label} data-local value={f.val} onChange={e => (f.set as (v:string)=>void)(e.target.value)}
+          <select key={f.label} data-local aria-label={`Filter by ${f.label.toLowerCase()}`} value={f.val} onChange={e => (f.set as (v:string)=>void)(e.target.value)}
             className="border border-slate-200 rounded-lg text-xs px-3 py-1.5 text-slate-600 bg-white focus:outline-none focus:border-indigo-300">
-            {f.opts.map(o => <option key={o}>{o === 'All' ? `All ${f.label}s` : o}</option>)}
+            {f.opts.map(o => <option key={o}>{o === 'All' ? `All ${f.plural}` : o}</option>)}
           </select>
         ))}
-        <select data-local value={timeFilter} onChange={e => setTimeFilter(e.target.value)}
+        <select data-local aria-label="Time range" value={timeFilter} onChange={e => setTimeFilter(e.target.value)}
           className="border border-slate-200 rounded-lg text-xs px-3 py-1.5 text-slate-600 bg-white">
           {['5m','15m','30m','1h','6h','24h'].map(t => <option key={t} value={t}>Last {t}</option>)}
         </select>
@@ -9024,36 +9031,38 @@ function CDRExchangeWorkspace() {
       {/* ── Filter bar ── */}
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm px-5 py-4 flex flex-wrap items-center gap-3">
         <div className="flex items-center gap-2 border border-slate-200 rounded-xl px-3.5 py-2 flex-1 min-w-[200px] bg-slate-50 focus-within:bg-white focus-within:border-indigo-300 transition-colors">
-          <Search className="w-4 h-4 text-slate-400 flex-shrink-0" />
+          <Search aria-hidden="true" className="w-4 h-4 text-slate-400 flex-shrink-0" />
           <input
+            type="search"
+            aria-label="Search by CDR ID, session or token"
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="CDR ID, session, token..."
             className="text-sm outline-none bg-transparent text-slate-700 placeholder-slate-400 w-full"
           />
           {search && (
-            <button data-local onClick={() => setSearch('')}>
+            <button data-local onClick={() => setSearch('')} aria-label="Clear search">
               <X className="w-3.5 h-3.5 text-slate-400 hover:text-slate-600" />
             </button>
           )}
         </div>
-        <select data-local value={partnerFilter} onChange={e => setPartnerFilter(e.target.value)}
+        <select data-local aria-label="Filter by partner" value={partnerFilter} onChange={e => setPartnerFilter(e.target.value)}
           className="border border-slate-200 rounded-xl text-sm px-4 py-2 text-slate-600 bg-white focus:outline-none focus:border-indigo-300 cursor-pointer hover:border-slate-300 transition-colors">
           {['All','ECG Ghana','Goil EV Network','Total Energies Ghana','VRA EV Charge','Eletrobras EV Brasil','Shell Ghana EV'].map(p =>
             <option key={p} value={p}>{p === 'All' ? 'All Partners' : p}</option>
           )}
         </select>
-        <select data-local value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
+        <select data-local aria-label="Filter by status" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
           className="border border-slate-200 rounded-xl text-sm px-4 py-2 text-slate-600 bg-white focus:outline-none focus:border-indigo-300 cursor-pointer hover:border-slate-300 transition-colors">
           {['All','Validated','Processing','Disputed','Error'].map(s =>
             <option key={s} value={s}>{s === 'All' ? 'All Statuses' : s}</option>
           )}
         </select>
         <div className="flex flex-wrap items-center gap-2 text-sm text-slate-500">
-          <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
+          <input type="date" aria-label="From date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
             className="border border-slate-200 rounded-xl text-sm px-3 py-2 text-slate-600 bg-white focus:outline-none focus:border-indigo-300 hover:border-slate-300 transition-colors" />
-          <span className="text-slate-300">→</span>
-          <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
+          <span className="text-slate-300" aria-hidden="true">→</span>
+          <input type="date" aria-label="To date" value={dateTo} onChange={e => setDateTo(e.target.value)}
             className="border border-slate-200 rounded-xl text-sm px-3 py-2 text-slate-600 bg-white focus:outline-none focus:border-indigo-300 hover:border-slate-300 transition-colors" />
         </div>
         {(search || partnerFilter !== 'All' || statusFilter !== 'All' || dateFrom || dateTo) && (
@@ -9119,12 +9128,15 @@ function CDRExchangeWorkspace() {
                     </td>
                     <td className="px-5 py-3.5 relative">
                       <div className="flex items-center gap-1">
-                        <button data-local onClick={() => setDrawerCdr(c.id)}
+                        <button data-local onClick={() => setDrawerCdr(c.id)} aria-label={`View CDR ${c.id}`}
                           className="w-8 h-8 rounded-lg hover:bg-indigo-50 flex items-center justify-center text-slate-400 hover:text-indigo-600 transition-colors">
                           <Eye className="w-4 h-4" />
                         </button>
                         <button data-local
                           onClick={e => { e.stopPropagation(); setActionMenu(actionMenu === c.id ? null : c.id); }}
+                          aria-label={`More actions for CDR ${c.id}`}
+                          aria-haspopup="menu"
+                          aria-expanded={actionMenu === c.id}
                           className="w-8 h-8 rounded-lg hover:bg-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-600 transition-colors">
                           <MoreHorizontal className="w-4 h-4" />
                         </button>
@@ -9703,23 +9715,23 @@ function DisputesDashboard() {
       {/* ── Search + Filters ── */}
       <div className="bg-white rounded-xl border border-slate-200 px-4 py-3 flex flex-wrap gap-3 items-center shadow-sm">
         <div className="relative flex-1 min-w-48">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-          <input value={search} onChange={e => setSearch(e.target.value)}
+          <Search aria-hidden="true" className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <input type="search" aria-label="Search by dispute ID, CDR ID or partner" value={search} onChange={e => setSearch(e.target.value)}
             className="pl-9 pr-8 py-2 border border-slate-200 rounded-lg text-sm w-full text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300"
             placeholder="Search Dispute ID, CDR ID, or Partner..." />
-          {search && <button data-local onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"><X className="w-3.5 h-3.5" /></button>}
+          {search && <button data-local onClick={() => setSearch('')} aria-label="Clear search" className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"><X className="w-3.5 h-3.5" /></button>}
         </div>
-        <select data-local value={partnerFilter} onChange={e => setPartnerFilter(e.target.value)}
+        <select data-local aria-label="Filter by partner" value={partnerFilter} onChange={e => setPartnerFilter(e.target.value)}
           className="border border-slate-200 rounded-lg text-sm px-3 py-2 text-slate-600 bg-white">
           <option value="All">All Partners</option>
           {partners.map(p => <option key={p}>{p}</option>)}
         </select>
-        <select data-local value={reasonFilter} onChange={e => setReasonFilter(e.target.value)}
+        <select data-local aria-label="Filter by reason" value={reasonFilter} onChange={e => setReasonFilter(e.target.value)}
           className="border border-slate-200 rounded-lg text-sm px-3 py-2 text-slate-600 bg-white">
           <option value="All">All Reasons</option>
           {reasons.map(r => <option key={r}>{r}</option>)}
         </select>
-        <select data-local value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setKpiFilter(null); }}
+        <select data-local aria-label="Filter by status" value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setKpiFilter(null); }}
           className="border border-slate-200 rounded-lg text-sm px-3 py-2 text-slate-600 bg-white">
           <option value="All">All Statuses</option>
           {['open','in_review','awaiting_partner','escalated','resolved','rejected'].map(s =>
@@ -10132,6 +10144,7 @@ function InvoicingWorkspace() {
           <span className="text-xs text-slate-400">{filtered.length} invoice{filtered.length !== 1 ? 's' : ''}</span>
           <select
             data-local
+            aria-label="Filter by billing period"
             value={periodFilter}
             onChange={e => setPeriodFilter(e.target.value)}
             className="border border-slate-200 rounded-lg text-sm px-3 py-2 text-slate-700 bg-white focus:outline-none focus:border-indigo-300 cursor-pointer hover:border-slate-300 transition-colors"
@@ -10289,11 +10302,12 @@ function MessagingSection() {
           {/* Compose */}
           <div className="p-4 border-t border-slate-100 flex gap-2">
             <input
-              className="flex-1 border border-slate-200 rounded-lg text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-300"
+              aria-label="Message"
+              className="flex-1 min-w-0 border border-slate-200 rounded-lg text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-300"
               placeholder="Write a message..."
             />
-            <button className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 flex items-center gap-1">
-              <Send className="w-4 h-4" />
+            <button aria-label="Send message" className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 flex items-center gap-1">
+              <Send className="w-4 h-4" aria-hidden="true" />
             </button>
           </div>
         </div>
